@@ -46,8 +46,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh;background-image:ra
 .btn-primary:hover{background:var(--neon-green);color:#000;box-shadow:0 0 20px var(--neon-green)}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed}
 .error-msg{color:var(--neon-red);font-size:13px;margin-top:10px;min-height:18px;text-shadow:0 0 5px var(--neon-red)}
-.hint{font-size:11px;color:#666;margin-top:16px}
-.hint code{background:#1a1a24;padding:2px 6px;border-radius:4px;color:var(--neon-cyan);border:1px solid #333}
 
 /* APP NEON */
 #appView{min-height:100vh;display:flex;flex-direction:column}
@@ -164,7 +162,7 @@ table tr:last-child td{border-bottom:none}
       <button type="submit" class="btn btn-primary" id="loginBtn">Login System</button>
       <div class="error-msg" id="loginError"></div>
     </form>
-    <p class="hint">Admin: <code>admin / admin123</code><br>Guru: <code>guru / guru123</code></p>
+    <!-- TEKS HINT SUDAH DIHAPUS DARI SINI -->
   </div>
 </div>
 
@@ -334,4 +332,116 @@ async function renderDashboard() {
       list.forEach(t => {
         const cur = todayAtt[t.id] || '';
         html += `<div class="teacher-row">
-          <div class="teacher-info"><span class="teacher-name">${esc(t.name
+          <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c}</span></div>
+          <div class="att-buttons">
+            <button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat')">Tepat Waktu</button>
+            <button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat')">Telat</button>
+            <button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak')">Tidak Hadir</button>
+          </div></div>`;
+      });
+      html += `</div>`;
+    });
+    container.innerHTML = html || '<div class="empty">Belum ada guru terdaftar.</div>';
+  } catch (e) { toast(e.message, true); }
+}
+async function markAttendance(teacherId, status) {
+  try { await API.call('POST', '/attendance', { teacherId, date: todayStr(), status }); toast('Presensi tersimpan ✓'); renderDashboard(); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function renderRekap() {
+  const input = document.getElementById('rekapMonth');
+  if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  try {
+    const data = await API.call('GET', '/rekap?month=' + input.value);
+    const tbody = document.getElementById('rekapBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Belum ada data.</td></tr>'; return; }
+    tbody.innerHTML = data.map(r => `<tr>
+      <td>${esc(r.name)}</td><td>Kelas ${r.class}</td>
+      <td><span class="badge tepat">${r.tepatWaktu}</span></td>
+      <td><span class="badge telat">${r.telat}</span></td>
+      <td><span class="badge tidak">${r.tidakHadir}</span></td>
+      <td><strong>${r.total}</strong></td></tr>`).join('');
+  } catch (e) { toast(e.message, true); }
+}
+document.getElementById('rekapMonth').addEventListener('change', renderRekap);
+
+async function renderGuru() {
+  try {
+    const teachers = await API.call('GET', '/teachers');
+    const isAdmin = API.user.role === 'admin';
+    document.getElementById('guruAdminForm').classList.toggle('hidden', !isAdmin);
+    const list = document.getElementById('guruList');
+    if (!teachers.length) { list.innerHTML = '<div class="empty">Belum ada guru.</div>'; return; }
+    let html = '';
+    ['A','B','C'].forEach(c => {
+      const items = teachers.filter(t => t.class === c);
+      if (!items.length) return;
+      html += `<div class="class-section"><div class="class-header">Kelas ${c}</div>`;
+      items.forEach(t => {
+        html += `<div class="teacher-row">
+          <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${t.class}</span></div>
+          ${isAdmin ? `<button class="icon-btn del" onclick="deleteTeacher('${t.id}','${esc(t.name)}')">🗑️</button>` : ''}
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    list.innerHTML = html;
+  } catch (e) { toast(e.message, true); }
+}
+async function addTeacher() {
+  const name = document.getElementById('newGuruName').value.trim();
+  const cls = document.getElementById('newGuruClass').value;
+  if (!name) return toast('Nama guru wajib diisi', true);
+  try { await API.call('POST', '/teachers', { name, class: cls }); document.getElementById('newGuruName').value = ''; toast('Guru ditambahkan ✓'); renderGuru(); }
+  catch (e) { toast(e.message, true); }
+}
+async function deleteTeacher(id, name) {
+  if (!confirm(`Hapus guru "${name}"?`)) return;
+  try { await API.call('DELETE', '/teachers/' + id); toast('Guru dihapus'); renderGuru(); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function renderProker() {
+  try {
+    const proker = await API.call('GET', '/proker');
+    const isAdmin = API.user.role === 'admin';
+    document.getElementById('prokerAdminForm').classList.toggle('hidden', !isAdmin);
+    const list = document.getElementById('prokerList');
+    if (!proker.length) { list.innerHTML = '<div class="empty">Belum ada program kerja.</div>'; return; }
+    list.innerHTML = proker.map(p => `<div class="proker-item">
+      <span class="proker-name">${esc(p.name)}</span>
+      <span class="badge ${p.status === 'terlaksana' ? 'terlaksana' : 'belum'}">${p.status === 'terlaksana' ? '✓ Terlaksana' : '✗ Belum Terlaksana'}</span>
+      ${isAdmin ? `<div class="proker-actions">
+        <button class="icon-btn edit" title="Ubah status" onclick="toggleProker('${p.id}','${p.status}')">🔄</button>
+        <button class="icon-btn del" title="Hapus" onclick="deleteProker('${p.id}','${esc(p.name)}')">🗑️</button>
+      </div>` : ''}</div>`).join('');
+  } catch (e) { toast(e.message, true); }
+}
+async function addProker() {
+  const name = document.getElementById('newProkerName').value.trim();
+  const status = document.getElementById('newProkerStatus').value;
+  if (!name) return toast('Nama proker wajib diisi', true);
+  try { await API.call('POST', '/proker', { name, status }); document.getElementById('newProkerName').value = ''; toast('Proker ditambahkan ✓'); renderProker(); }
+  catch (e) { toast(e.message, true); }
+}
+async function toggleProker(id, cur) {
+  const next = cur === 'terlaksana' ? 'tidak' : 'terlaksana';
+  try { await API.call('PUT', '/proker/' + id, { status: next }); toast('Status diubah ✓'); renderProker(); }
+  catch (e) { toast(e.message, true); }
+}
+async function deleteProker(id, name) {
+  if (!confirm(`Hapus proker "${name}"?`)) return;
+  try { await API.call('DELETE', '/proker/' + id); toast('Proker dihapus'); renderProker(); }
+  catch (e) { toast(e.message, true); }
+}
+
+(async () => {
+  if (API.token) {
+    try { API.user = await API.call('GET', '/me'); showApp(); return; } catch (e) {}
+  }
+  showLogin();
+})();
+</script>
+</body>
+</html>
