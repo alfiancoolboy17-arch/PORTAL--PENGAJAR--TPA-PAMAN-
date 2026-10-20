@@ -30,6 +30,7 @@ header.app-header{background:rgba(18,18,22,0.9);color:#fff;padding:14px 18px;dis
 .header-title{font-size:14px;font-weight:700;color:#fff;}
 .header-sub{font-size:11px;color:var(--neon-green)}
 .header-right{display:flex;align-items:center;gap:8px}
+.live-clock{font-size:12px; font-weight:bold; color:var(--neon-cyan); margin-right:10px; letter-spacing:1px;}
 .btn-logout{background:transparent;border:1px solid var(--neon-red);color:var(--neon-red);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;}
 nav.tabs{display:flex;background:#121216;border-bottom:1px solid #222;overflow-x:auto;position:sticky;top:68px;z-index:9}
 nav.tabs button{flex:1;min-width:90px;padding:14px 10px;background:none;border:none;font-size:13px;font-weight:700;color:#666;cursor:pointer;border-bottom:3px solid transparent;}
@@ -63,6 +64,7 @@ main.content{flex:1;padding:18px;max-width:900px;margin:0 auto;width:100%}
 .att-btn.sakit.active,.att-btn.sakit:hover{background:var(--neon-cyan);color:#000;}
 .att-btn.tidak{border-color:var(--neon-red);color:var(--neon-red)}
 .att-btn.tidak.active,.att-btn.tidak:hover{background:var(--neon-red);color:#fff;}
+.att-btn:disabled {opacity: 0.5; cursor: not-allowed;}
 .upload-area{margin-top:8px;width:100%;background:#1a1a24;padding:8px;border-radius:8px;border:1px dashed #444;}
 table{width:100%;border-collapse:collapse;font-size:12px}
 table th{background:#0a0a0c;color:var(--neon-cyan);padding:8px 4px;text-align:left;}
@@ -90,6 +92,12 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:1px solid var(--neon-green);color:var(--neon-green);padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;z-index:1000;opacity:0;transition:.3s;pointer-events:none;text-align:center;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-10px);}
 .toast.error{border-color:var(--neon-red);color:var(--neon-red);}
+
+/* Tombol Aksi Bawah */
+.action-bar {position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--neon-cyan); padding: 15px; display: flex; justify-content: center; gap: 15px; z-index: 100; box-shadow: 0 -4px 15px rgba(0,243,255,0.1);}
+.action-bar button {padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;}
+.btn-cancel {background: transparent; border: 1px solid var(--neon-red); color: var(--neon-red);}
+.btn-save {background: var(--neon-green); border: none; color: #000; box-shadow: 0 0 10px rgba(0,255,136,0.5);}
 </style>
 </head>
 <body>
@@ -126,20 +134,21 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
       <div><div class="header-title">PORTAL TPA PAMAN</div><div class="header-sub"><span id="userRole"></span></div></div>
     </div>
     <div class="header-right">
+      <div class="live-clock" id="liveClock">00:00:00 WIB</div>
       <button class="btn-logout" onclick="doLogout()">Keluar</button>
     </div>
   </header>
   <nav class="tabs" id="navTabs">
     <button data-tab="dashboard" class="active">Dasbor Guru</button>
     <button data-tab="rekap">Rekap Guru</button>
-    <button data-tab="santri" id="tabSantri" class="hidden">Presensi Santri</button>
-    <button data-tab="rekapSantri" id="tabRekapSantri" class="hidden">Rekap Santri</button>
+    <button data-tab="santri" id="tabSantri">Presensi Santri</button>
+    <button data-tab="rekapSantri" id="tabRekapSantri">Rekap Santri</button>
     <button data-tab="guru" id="tabGuru" class="hidden">Data Guru</button>
-    <button data-tab="member" id="tabMember" class="hidden">Data Member</button>
+    <button data-tab="member" id="tabMember" class="hidden">Data Akun</button>
     <button data-tab="proker">Proker</button>
     <button data-tab="setting" id="tabSetting" class="hidden">Pengaturan</button>
   </nav>
-  <main class="content">
+  <main class="content" style="padding-bottom: 80px;"> <!-- Padding bawah untuk Action Bar -->
     
     <!-- DASHBOARD GURU -->
     <section id="dashboardView">
@@ -202,7 +211,7 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
         </div>
         <div id="rekapSantriTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 10px; border-radius: 8px;">
           <table id="rekapSantriTable">
-            <thead><tr><th>Nama Santri</th><th>Kelas</th><th>Hadir</th><th>Sakit</th><th>Ijin</th><th>Total</th></tr></thead>
+            <thead><tr><th>Nama Santri</th><th>Kelas</th><th>Hadir</th><th>Sakit</th><th>Ijin</th><th>Absen</th><th>Total</th></tr></thead>
             <tbody id="rekapSantriBody"></tbody>
           </table>
         </div>
@@ -225,20 +234,24 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
       <div class="card"><h2>👥 Daftar Guru</h2><div id="guruList"></div></div>
     </section>
 
-    <!-- DATA MEMBER -->
+    <!-- DATA AKUN (MEMBER & ADMIN) -->
     <section id="memberView" class="hidden">
       <div class="card">
-        <h2>➕ Tambah Akun Member</h2>
+        <h2>➕ Tambah Akun (Admin / Member)</h2>
         <div class="form-row">
           <input type="text" id="newMemberUsername" placeholder="Username">
           <input type="password" id="newMemberPassword" placeholder="Password">
+          <select id="newUserRole">
+            <option value="member">Member (Guru)</option>
+            <option value="admin">Admin Baru</option>
+          </select>
           <select id="newMemberTeacherId">
-            <option value="">-- Pilih Guru --</option>
+            <option value="">-- Pilih Guru (Jika Member) --</option>
           </select>
           <button class="btn-sm" onclick="addMember()">Tambah</button>
         </div>
       </div>
-      <div class="card"><h2>👥 Daftar Akun Member</h2><div id="memberList"></div></div>
+      <div class="card"><h2>👥 Daftar Akun</h2><div id="memberList"></div></div>
     </section>
 
     <!-- PROKER -->
@@ -271,16 +284,63 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
       <div class="card" style="border-color: var(--neon-red);">
         <h2 style="color: var(--neon-red);">⚠️ Zona Berbahaya</h2>
         <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Tindakan ini akan menghapus seluruh riwayat presensi guru secara permanen.</p>
-        <button class="btn-danger" onclick="resetAttendance()">Reset Semua Data Presensi Guru</button>
+        <button class="btn-danger" onclick="resetAttendance()">Reset Data Presensi Guru</button>
       </div>
     </section>
 
   </main>
+
+  <!-- ACTION BAR (Batal / Simpan) KHUSUS PRESENSI SANTRI -->
+  <div id="santriActionBar" class="action-bar hidden">
+    <button class="btn-cancel" onclick="cancelSantriDraft()">Batal</button>
+    <button class="btn-save" onclick="saveSantriDraft()">Simpan Presensi Hari Ini</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ================= SUARA (WEB AUDIO API) =================
+function playSound(type) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    if (type === 'success') {
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'error') {
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
+    } else {
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1);
+    }
+  } catch (e) { console.log('Audio error', e); }
+}
+
+// ================= JAM DIGITAL =================
+setInterval(() => {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
+  const clockEl = document.getElementById('liveClock');
+  if (clockEl) clockEl.innerText = timeStr + ' WIB';
+}, 1000);
+
+// ================= API & LOGIKA UTAMA =================
 const API = {
   token: localStorage.getItem('token') || '',
   user: null,
@@ -345,11 +405,10 @@ function showApp() {
     document.getElementById('tabSetting').classList.add('hidden');
     document.getElementById('statsGrid').classList.add('hidden');
     document.getElementById('btnDownloadPDF').style.display = 'none';
-    document.getElementById('btnDownloadPDFSantri').style.display = 'none'; // Hanya admin atau guru kelas? Biarkan admin & guru bisa unduh kelasnya
+    document.getElementById('btnDownloadPDFSantri').style.display = 'none';
     document.getElementById('santriAdminForm').classList.add('hidden');
   }
   
-  // Tampilkan tab Santri untuk Admin & Member
   document.getElementById('tabSantri').classList.remove('hidden');
   document.getElementById('tabRekapSantri').classList.remove('hidden');
 
@@ -366,14 +425,18 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Gagal login');
     API.token = data.token; API.user = data.user; localStorage.setItem('token', data.token);
+    playSound('success');
     showApp();
-  } catch (e) { err.textContent = e.message; }
+  } catch (e) { playSound('error'); err.textContent = e.message; }
   finally { btn.disabled = false; btn.textContent = 'Login System'; }
 });
 
 function switchTab(name) {
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
+  
+  document.getElementById('santriActionBar').classList.add('hidden'); // Sembunyikan action bar tiap ganti tab
+  
   if (name === 'dashboard') renderDashboard();
   if (name === 'rekap')     renderRekap();
   if (name === 'santri')    renderSantri();
@@ -385,7 +448,7 @@ function switchTab(name) {
 }
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-/* ============ DASHBOARD GURU ============ */
+// ================= DASHBOARD GURU =================
 async function renderDashboard() {
   try {
     const [teachers, attendance] = await Promise.all([API.call('GET', '/teachers'), API.call('GET', '/attendance')]);
@@ -495,14 +558,16 @@ function handleImageUpload(event, teacherId) {
 async function markAttendance(teacherId, status, image) {
   try { 
       const res = await API.call('POST', '/attendance', { teacherId, date: todayStr(), status, image }); 
-      if(res.status && res.status !== status) toast('Waktu melebihi 18:00, tercatat Telat', true);
-      else if (API.user.role === 'member') { renderWelcome(true); toast('Presensi Berhasil! ☺️🙏', false); }
-      else toast('Presensi tersimpan ✓'); 
+      if(res.status && res.status !== status) { playSound('error'); toast('Waktu melebihi 18:00, tercatat Telat', true); }
+      else if (API.user.role === 'member') { renderWelcome(true); playSound('success'); toast('Presensi Berhasil! ☺️🙏', false); }
+      else { playSound('success'); toast('Presensi tersimpan ✓'); }
       renderDashboard(); 
-  } catch (e) { toast(e.message, true); }
+  } catch (e) { playSound('error'); toast(e.message, true); }
 }
 
-/* ============ PRESENSI SANTRI ============ */
+// ================= PRESENSI SANTRI (DRAFT & BATCH) =================
+let santriDraft = {}; // Menyimpan perubahan sementara sebelum disimpan
+
 async function renderSantri() {
   try {
     const [santri, attendance] = await Promise.all([API.call('GET', '/santri'), API.call('GET', '/santri_attendance')]);
@@ -522,19 +587,26 @@ async function renderSantri() {
       if (!list.length) return;
       html += `<div class="class-section"><div class="class-header">Kelas ${c}</div>`;
       list.forEach(s => {
-        const record = todayAtt[s.id] || null;
-        const cur = record ? record.status : '';
+        const dbRecord = todayAtt[s.id];
+        // Prioritas: Data di DB > Data Draft > Kosong
+        let currentStatus = dbRecord ? dbRecord.status : (santriDraft[s.id] ? santriDraft[s.id].status : '');
+        let currentNote = dbRecord ? dbRecord.note : (santriDraft[s.id] ? santriDraft[s.id].note : null);
         
+        // Tombol nonaktif jika sudah ada di DB & bukan admin
+        const isLocked = dbRecord && !isAdmin;
+        const disabledStr = isLocked ? 'disabled' : '';
+
         html += `<div class="teacher-row">
           <div class="teacher-info">
             <span class="teacher-name">${esc(s.name)}</span>
-            <span class="teacher-class">Kelas ${c}</span>
-            ${record && record.note ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(record.note)}</span>` : ''}
+            <span class="teacher-class">Kelas ${c} ${isLocked ? '🔒' : ''}</span>
+            ${currentNote ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(currentNote)}</span>` : ''}
           </div>
           <div class="att-buttons">
-            <button class="att-btn tepat ${cur==='hadir'?'active':''}" onclick="markSantriAtt('${s.id}','hadir')">Hadir</button>
-            <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="markSantriAtt('${s.id}','sakit')">Sakit</button>
-            <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')">Ijin</button>
+            <button class="att-btn tepat ${currentStatus==='hadir'?'active':''}" onclick="setSantriDraft('${s.id}','hadir')" ${disabledStr}>Hadir</button>
+            <button class="att-btn sakit ${currentStatus==='sakit'?'active':''}" onclick="setSantriDraft('${s.id}','sakit')" ${disabledStr}>Sakit</button>
+            <button class="att-btn ijin ${currentStatus==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')" ${disabledStr}>Ijin</button>
+            <button class="att-btn tidak ${currentStatus==='absen'?'active':''}" onclick="setSantriDraft('${s.id}','absen')" ${disabledStr}>Absen</button>
             ${isAdmin ? `<button class="icon-btn del" onclick="deleteSantri('${s.id}','${esc(s.name)}')">🗑️</button>` : ''}
           </div>
         </div>`;
@@ -542,21 +614,68 @@ async function renderSantri() {
       html += `</div>`;
     });
     container.innerHTML = html || '<div class="empty">Belum ada data santri di kelas Anda.</div>';
+    
+    // Tampilkan Action Bar jika ada draft
+    if (Object.keys(santriDraft).length > 0) {
+      document.getElementById('santriActionBar').classList.remove('hidden');
+    } else {
+      document.getElementById('santriActionBar').classList.add('hidden');
+    }
+    
   } catch (e) { toast(e.message, true); }
 }
 
-async function markSantriAtt(santriId, status, note = null) {
-  try {
-    await API.call('POST', '/santri_attendance', { santriId, date: todayStr(), status, note });
-    toast('Presensi santri tersimpan ✓');
-    renderSantri();
-  } catch (e) { toast(e.message, true); }
+function setSantriDraft(santriId, status, note = null) {
+  playSound('click');
+  santriDraft[santriId] = { status, note: note !== null ? note : (santriDraft[santriId]?.note || null) };
+  renderSantri(); // Re-render untuk update UI tombol aktif
 }
 
 function promptSantriIjin(santriId) {
   const note = prompt("Masukkan keterangan ijin (bebas):");
   if (note !== null) {
-    markSantriAtt(santriId, 'ijin', note);
+    setSantriDraft(santriId, 'ijin', note);
+  }
+}
+
+function cancelSantriDraft() {
+  playSound('click');
+  if(confirm('Batalkan semua perubahan presensi yang belum disimpan?')) {
+    santriDraft = {};
+    renderSantri();
+  }
+}
+
+async function saveSantriDraft() {
+  if (Object.keys(santriDraft).length === 0) return;
+  playSound('click');
+  
+  const records = Object.keys(santriDraft).map(id => ({
+    santriId: id,
+    status: santriDraft[id].status,
+    note: santriDraft[id].note
+  }));
+
+  try {
+    const btn = document.querySelector('.btn-save');
+    const oriText = btn.innerText;
+    btn.innerText = 'Menyimpan...';
+    btn.disabled = true;
+
+    await API.call('POST', '/santri_attendance/bulk', { date: todayStr(), records });
+    
+    santriDraft = {};
+    playSound('success');
+    toast('Presensi santri hari ini berhasil disimpan!');
+    renderSantri();
+    
+    btn.innerText = oriText;
+    btn.disabled = false;
+  } catch (e) {
+    playSound('error');
+    alert("Gagal menyimpan: " + e.message);
+    document.querySelector('.btn-save').innerText = 'Simpan Presensi Hari Ini';
+    document.querySelector('.btn-save').disabled = false;
   }
 }
 
@@ -564,17 +683,17 @@ async function addSantri() {
   const name = document.getElementById('newSantriName').value.trim();
   const cls = document.getElementById('newSantriClass').value;
   if (!name) return toast('Nama wajib diisi', true);
-  try { await API.call('POST', '/santri', { name, class: cls }); document.getElementById('newSantriName').value = ''; toast('Santri ditambahkan'); renderSantri(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('POST', '/santri', { name, class: cls }); document.getElementById('newSantriName').value = ''; playSound('success'); toast('Santri ditambahkan'); renderSantri(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
 async function deleteSantri(id, name) {
   if (!confirm(`Hapus santri "${name}"?`)) return;
-  try { await API.call('DELETE', '/santri/' + id); toast('Santri dihapus'); renderSantri(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('DELETE', '/santri/' + id); playSound('success'); toast('Santri dihapus'); renderSantri(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
-/* ============ REKAP SANTRI ============ */
+// ================= REKAP SANTRI & GURU =================
 async function renderRekapSantri() {
   const input = document.getElementById('rekapSantriMonth');
   if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
@@ -586,7 +705,8 @@ async function renderRekapSantri() {
       <td><span class="badge tepat">${r.hadir}</span></td>
       <td><span class="badge sakit">${r.sakit}</span></td>
       <td><span class="badge ijin">${r.ijin}</span></td>
-      <td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Belum ada data.</td></tr>';
+      <td><span class="badge tidak">${r.absen}</span></td>
+      <td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="7" class="empty">Belum ada data.</td></tr>';
   } catch (e) { toast(e.message, true); }
 }
 document.getElementById('rekapSantriMonth').addEventListener('change', renderRekapSantri);
@@ -595,35 +715,21 @@ function downloadPDFSantri() {
   const element = document.getElementById('rekapSantriTableContainer');
   const monthInput = document.getElementById('rekapSantriMonth').value;
   if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
+  playSound('click');
 
-  const opt = {
-    margin:       10,
-    filename:     `Rekap_Santri_TPA_PAMAN_${monthInput}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-  };
-
-  const originalBg = element.style.background;
-  const originalColor = element.style.color;
-  element.style.background = '#ffffff';
-  element.style.color = '#000000';
-  
-  const ths = element.querySelectorAll('th');
-  const tds = element.querySelectorAll('td');
-  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; });
-  tds.forEach(td => { td.style.color = '#000'; });
+  const opt = { margin: 10, filename: `Rekap_Santri_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+  const originalBg = element.style.background; const originalColor = element.style.color;
+  element.style.background = '#ffffff'; element.style.color = '#000000';
+  const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
+  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); tds.forEach(td => { td.style.color = '#000'; });
 
   html2pdf().set(opt).from(element).save().then(() => {
-    element.style.background = originalBg;
-    element.style.color = originalColor;
-    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; });
-    tds.forEach(td => { td.style.color = '#ccc'; });
-    toast('PDF Santri berhasil diunduh');
+    element.style.background = originalBg; element.style.color = originalColor;
+    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; }); tds.forEach(td => { td.style.color = '#ccc'; });
+    playSound('success'); toast('PDF Santri berhasil diunduh');
   });
 }
 
-/* ============ REKAP GURU ============ */
 async function renderRekap() {
   const input = document.getElementById('rekapMonth');
   if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
@@ -646,35 +752,22 @@ function downloadPDF() {
   const element = document.getElementById('rekapTableContainer');
   const monthInput = document.getElementById('rekapMonth').value;
   if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
+  playSound('click');
 
-  const opt = {
-    margin:       10,
-    filename:     `Rekap_Guru_TPA_PAMAN_${monthInput}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-  };
-
-  const originalBg = element.style.background;
-  const originalColor = element.style.color;
-  element.style.background = '#ffffff';
-  element.style.color = '#000000';
-  
-  const ths = element.querySelectorAll('th');
-  const tds = element.querySelectorAll('td');
-  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; });
-  tds.forEach(td => { td.style.color = '#000'; });
+  const opt = { margin: 10, filename: `Rekap_Guru_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
+  const originalBg = element.style.background; const originalColor = element.style.color;
+  element.style.background = '#ffffff'; element.style.color = '#000000';
+  const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
+  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); tds.forEach(td => { td.style.color = '#000'; });
 
   html2pdf().set(opt).from(element).save().then(() => {
-    element.style.background = originalBg;
-    element.style.color = originalColor;
-    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; });
-    tds.forEach(td => { td.style.color = '#ccc'; });
-    toast('PDF berhasil diunduh');
+    element.style.background = originalBg; element.style.color = originalColor;
+    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; }); tds.forEach(td => { td.style.color = '#ccc'; });
+    playSound('success'); toast('PDF berhasil diunduh');
   });
 }
 
-/* ============ GURU & MEMBER ============ */
+// ================= DATA GURU & AKUN =================
 async function renderGuru() {
   try {
     const teachers = await API.call('GET', '/teachers');
@@ -693,54 +786,62 @@ async function addTeacher() {
   const cls = document.getElementById('newGuruClass').value;
   const isWaliKelas = document.getElementById('newGuruWali').checked;
   if (!name) return toast('Nama wajib diisi', true);
-  try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; toast('Guru ditambahkan'); renderGuru(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; playSound('success'); toast('Guru ditambahkan'); renderGuru(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 async function deleteTeacher(id, name) {
   if (!confirm(`Hapus guru "${name}"?`)) return;
-  try { await API.call('DELETE', '/teachers/' + id); toast('Guru dihapus'); renderGuru(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('DELETE', '/teachers/' + id); playSound('success'); toast('Guru dihapus'); renderGuru(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
 async function renderMember() {
   try {
     const [users, teachers] = await Promise.all([API.call('GET', '/users'), API.call('GET', '/teachers')]);
     const select = document.getElementById('newMemberTeacherId');
-    select.innerHTML = '<option value="">-- Pilih Guru --</option>' + teachers.map(t => `<option value="${t.id}">${esc(t.name)} (Kelas ${t.class})</option>`).join('');
+    select.innerHTML = '<option value="">-- Pilih Guru (Jika Member) --</option>' + teachers.map(t => `<option value="${t.id}">${esc(t.name)} (Kelas ${t.class})</option>`).join('');
 
-    const members = users.filter(u => u.role === 'member');
     const list = document.getElementById('memberList');
-    list.innerHTML = members.map(u => {
-        const tName = u.teacherId ? (teachers.find(t => t.id === u.teacherId)?.name || '?') : 'Belum di-link';
+    list.innerHTML = users.map(u => {
+        const tName = u.teacherId ? (teachers.find(t => t.id === u.teacherId)?.name || '?') : 'Tidak terikat guru';
         return `<div class="teacher-row">
-            <div class="teacher-info"><span class="teacher-name">${esc(u.username)}</span><span class="teacher-class">Guru: ${esc(tName)}</span></div>
+            <div class="teacher-info">
+              <span class="teacher-name">${esc(u.username)} <span class="badge ${u.role === 'admin' ? 'terlaksana' : 'ijin'}">${u.role.toUpperCase()}</span></span>
+              <span class="teacher-class">Nama: ${esc(u.name)} | Guru: ${esc(tName)}</span>
+            </div>
             <button class="icon-btn del" onclick="deleteMember('${u.id}','${esc(u.username)}')">🗑️</button>
         </div>`;
-    }).join('') || '<div class="empty">Belum ada member.</div>';
+    }).join('') || '<div class="empty">Belum ada akun.</div>';
   } catch (e) { toast(e.message, true); }
 }
 async function addMember() {
   const username = document.getElementById('newMemberUsername').value.trim();
   const password = document.getElementById('newMemberPassword').value;
+  const role = document.getElementById('newUserRole').value;
   const teacherId = document.getElementById('newMemberTeacherId').value;
-  if (!username || !password || !teacherId) return toast('Isi semua kolom', true);
   
-  const teachers = await API.call('GET', '/teachers');
-  const tName = teachers.find(t => t.id === teacherId)?.name || 'Member';
+  if (!username || !password) return toast('Username & Password wajib', true);
+  if (role === 'member' && !teacherId) return toast('Member harus di-link ke Guru', true);
+
+  let finalName = 'Admin Baru';
+  if (role === 'member') {
+    const teachers = await API.call('GET', '/teachers');
+    finalName = teachers.find(t => t.id === teacherId)?.name || 'Member';
+  }
 
   try { 
-      await API.call('POST', '/users', { username, password, name: tName, teacherId }); 
+      await API.call('POST', '/users', { username, password, name: finalName, teacherId: role === 'member' ? teacherId : null, role }); 
       document.getElementById('newMemberUsername').value = ''; document.getElementById('newMemberPassword').value = '';
-      toast('Member ditambahkan'); renderMember(); 
-  } catch (e) { toast(e.message, true); }
+      playSound('success'); toast('Akun berhasil dibuat'); renderMember(); 
+  } catch (e) { playSound('error'); toast(e.message, true); }
 }
 async function deleteMember(id, username) {
   if (!confirm(`Hapus akun "${username}"?`)) return;
-  try { await API.call('DELETE', '/users/' + id); toast('Member dihapus'); renderMember(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('DELETE', '/users/' + id); playSound('success'); toast('Akun dihapus'); renderMember(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
-/* ============ PROKER ============ */
+// ================= PROKER =================
 async function renderProker() {
   try {
     const proker = await API.call('GET', '/proker');
@@ -769,48 +870,41 @@ async function addProker() {
   try { 
       await API.call('POST', '/proker', { name, status, day, date }); 
       document.getElementById('newProkerName').value = ''; document.getElementById('newProkerDay').value = ''; document.getElementById('newProkerDate').value = '';
-      toast('Proker ditambahkan'); renderProker(); 
-  } catch (e) { toast(e.message, true); }
+      playSound('success'); toast('Proker ditambahkan'); renderProker(); 
+  } catch (e) { playSound('error'); toast(e.message, true); }
 }
 async function toggleProker(id, cur) {
   const next = cur === 'terlaksana' ? 'tidak' : 'terlaksana';
-  try { await API.call('PUT', '/proker/' + id, { status: next }); toast('Status diubah'); renderProker(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('PUT', '/proker/' + id, { status: next }); playSound('success'); toast('Status diubah'); renderProker(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 async function deleteProker(id, name) {
   if (!confirm(`Hapus proker "${name}"?`)) return;
-  try { await API.call('DELETE', '/proker/' + id); toast('Proker dihapus'); renderProker(); }
-  catch (e) { toast(e.message, true); }
+  try { await API.call('DELETE', '/proker/' + id); playSound('success'); toast('Proker dihapus'); renderProker(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
-/* ============ PENGATURAN ============ */
+// ================= PENGATURAN =================
 function renderSetting() {
   document.getElementById('setUsername').value = '';
   document.getElementById('setPassword').value = '';
 }
-
 async function changeCredentials() {
   const newUsername = document.getElementById('setUsername').value.trim();
   const newPassword = document.getElementById('setPassword').value;
   if (!newUsername && !newPassword) return toast('Isi salah satu kolom', true);
-
   try {
     await API.call('PUT', '/admin/credentials', { newUsername, newPassword });
-    toast('Kredensial berhasil diubah');
+    playSound('success'); toast('Kredensial berhasil diubah');
     if (newUsername) API.user.username = newUsername;
     renderSetting();
-  } catch (e) { toast(e.message, true); }
+  } catch (e) { playSound('error'); toast(e.message, true); }
 }
-
 async function resetAttendance() {
   if (!confirm('APAKAH ANDA YAKIN? Seluruh data presensi guru akan dihapus permanen!')) return;
   if (!confirm('Ini tidak bisa dibatalkan. Lanjutkan?')) return;
-  
-  try {
-    await API.call('DELETE', '/attendance');
-    toast('Data presensi guru berhasil di-reset');
-    renderDashboard();
-  } catch (e) { toast(e.message, true); }
+  try { await API.call('DELETE', '/attendance'); playSound('success'); toast('Data presensi guru berhasil di-reset'); renderDashboard(); }
+  catch (e) { playSound('error'); toast(e.message, true); }
 }
 
 (async () => {
