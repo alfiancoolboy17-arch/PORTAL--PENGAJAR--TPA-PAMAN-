@@ -7,13 +7,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
+// Limit diperbesar untuk menampung gambar base64
+app.use(express.json({ limit: '15mb' })); 
+app.use(express.urlencoded({ limit: '15mb', extended: true }));
+
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
     const initial = {
       users: [
-        // Admin tidak terikat ke guru tertentu (teacherId: null)
         { id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null },
-        { id: 'u2', username: 'guru', password: 'guru123', role: 'member', name: 'Guru TPA', teacherId: 't1' }
+        { id: 'u2', username: 'guru', password: 'guru123', role: 'member', name: 'Ustadz Ahmad Fauzi', teacherId: 't1' }
       ],
       teachers: [
         { id: 't1', name: 'Ustadz Ahmad Fauzi', class: 'A' },
@@ -21,9 +24,7 @@ function loadData() {
         { id: 't3', name: 'Ustadz Yusuf Habibi', class: 'C' }
       ],
       attendance: [],
-      proker: [
-        { id: 'p1', name: 'Kajian Rutin Mingguan', status: 'terlaksana', day: 'Minggu', date: '2026-10-25' }
-      ]
+      proker: []
     };
     fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
     return initial;
@@ -33,7 +34,6 @@ function loadData() {
 const saveData = d => fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2));
 
 const sessions = {};
-app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const auth = (req, res, next) => {
@@ -47,7 +47,7 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-/* ============ AUTH ============ */
+/* ============ AUTH & PROFIL ============ */
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const user = loadData().users.find(u => u.username === username && u.password === password);
@@ -59,7 +59,25 @@ app.post('/api/login', (req, res) => {
 app.post('/api/logout', auth, (req, res) => { delete sessions[req.headers['authorization']]; res.json({ ok: true }); });
 app.get('/api/me', auth, (req, res) => res.json(req.user));
 
-/* ============ GURU ============ */
+// Ganti Kredensial Admin
+app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
+  const { newUsername, newPassword } = req.body;
+  const data = loadData();
+  const user = data.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+  
+  if (newUsername && newUsername !== user.username) {
+    if (data.users.find(u => u.username === newUsername)) return res.status(400).json({ error: 'Username sudah dipakai' });
+    user.username = newUsername;
+    req.user.username = newUsername; // Update session
+  }
+  if (newPassword) user.password = newPassword;
+  
+  saveData(data);
+  res.json({ ok: true });
+});
+
+/* ============ GURU & MEMBER ============ */
 app.get('/api/teachers', auth, (req, res) => res.json(loadData().teachers));
 app.post('/api/teachers', auth, adminOnly, (req, res) => {
   const { name, class: cls } = req.body;
@@ -75,14 +93,12 @@ app.delete('/api/teachers/:id', auth, adminOnly, (req, res) => {
   saveData(data); res.json({ ok: true });
 });
 
-/* ============ USERS / MEMBERS ============ */
 app.get('/api/users', auth, adminOnly, (req, res) => {
   const data = loadData();
   res.json(data.users.map(u => ({ id: u.id, username: u.username, name: u.name, role: u.role, teacherId: u.teacherId })));
 });
 app.post('/api/users', auth, adminOnly, (req, res) => {
   const { username, password, name, teacherId } = req.body;
-  if (!username || !password || !name) return res.status(400).json({ error: 'Data tidak lengkap' });
   const data = loadData();
   if (data.users.find(u => u.username === username)) return res.status(400).json({ error: 'Username sudah dipakai' });
   const u = { id: 'u' + Date.now(), username, password, role: 'member', name, teacherId: teacherId || null };
@@ -97,7 +113,6 @@ app.delete('/api/users/:id', auth, adminOnly, (req, res) => {
 /* ============ PRESENSI ============ */
 app.get('/api/attendance', auth, (req, res) => {
   const data = loadData();
-  // Jika member, hanya kembalikan presensi miliknya sendiri
   if (req.user.role === 'member') {
     return res.json(data.attendance.filter(a => a.teacherId === req.user.teacherId));
   }
@@ -105,37 +120,45 @@ app.get('/api/attendance', auth, (req, res) => {
 });
 
 app.post('/api/attendance', auth, (req, res) => {
-  const { teacherId, date } = req.body;
+  const { teacherId, date, status, image } = req.body;
   const data = loadData();
   
-  // Cek Otorisasi: Member hanya bisa absen untuk dirinya sendiri
   if (req.user.role === 'member' && req.user.teacherId !== teacherId) {
-    return res.status(403).json({ error: 'Anda hanya bisa absen untuk diri sendiri' });
+    return res.status(403).json({ error: 'Hanya bisa absen untuk diri sendiri' });
+  }
+
+  // Validasi Ijin/Sakit wajib gambar
+  if ((status === 'ijin' || status === 'sakit') && req.user.role === 'member' && !image) {
+    return res.status(400).json({ error: 'Wajib melampirkan bukti gambar untuk Ijin/Sakit' });
   }
 
   // Logika Waktu: Tepat waktu maksimal jam 17:45 WIB
   const now = new Date();
   const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-  const hours = wibTime.getHours();
-  const minutes = wibTime.getMinutes();
-  let status = req.body.status;
-
-  // Jika admin yang input manual, ikuti pilihan admin. Jika member yang absen, cek waktu.
+  let finalStatus = status;
   if (req.user.role === 'member' && status === 'tepat') {
-    if (hours > 17 || (hours === 17 && minutes > 45)) {
-      status = 'telat';
+    if (wibTime.getHours() > 17 || (wibTime.getHours() === 17 && wibTime.getMinutes() > 45)) {
+      finalStatus = 'telat';
     }
   }
 
   const ex = data.attendance.find(a => a.teacherId === teacherId && a.date === date);
   if (ex) { 
-    // Hanya admin yang bisa mengedit data yang sudah ada
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin yang bisa mengedit' });
-    ex.status = status; ex.by = req.user.name; 
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin yang bisa mengedit data yang sudah ada' });
+    ex.status = finalStatus; ex.by = req.user.name; 
+    if (image) ex.image = image;
   } else {
-    data.attendance.push({ id: 'a' + Date.now(), teacherId, date, status, by: req.user.name });
+    data.attendance.push({ id: 'a' + Date.now(), teacherId, date, status: finalStatus, image: image || null, by: req.user.name });
   }
-  saveData(data); res.json({ ok: true, status });
+  saveData(data); res.json({ ok: true, status: finalStatus });
+});
+
+// FITUR RESET PRESENSI (Admin Only)
+app.delete('/api/attendance', auth, adminOnly, (req, res) => {
+  const data = loadData();
+  data.attendance = [];
+  saveData(data);
+  res.json({ ok: true });
 });
 
 /* ============ REKAP BULANAN ============ */
@@ -145,9 +168,7 @@ app.get('/api/rekap', auth, (req, res) => {
   const filtered = data.attendance.filter(a => a.date.startsWith(month));
   
   let teachers = data.teachers;
-  if (req.user.role === 'member') {
-    teachers = teachers.filter(t => t.id === req.user.teacherId);
-  }
+  if (req.user.role === 'member') teachers = teachers.filter(t => t.id === req.user.teacherId);
 
   res.json(teachers.map(t => {
     const recs = filtered.filter(a => a.teacherId === t.id);
@@ -155,6 +176,8 @@ app.get('/api/rekap', auth, (req, res) => {
       id: t.id, name: t.name, class: t.class,
       tepatWaktu: recs.filter(r => r.status === 'tepat').length,
       telat: recs.filter(r => r.status === 'telat').length,
+      ijin: recs.filter(r => r.status === 'ijin').length,
+      sakit: recs.filter(r => r.status === 'sakit').length,
       tidakHadir: recs.filter(r => r.status === 'tidak').length,
       total: recs.length
     };
