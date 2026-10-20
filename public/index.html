@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Presensi TPA PAMAN</title>
-<!-- Library untuk Download PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
@@ -131,8 +130,10 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
     </div>
   </header>
   <nav class="tabs" id="navTabs">
-    <button data-tab="dashboard" class="active">Dasbor</button>
-    <button data-tab="rekap">Rekap Bulanan</button>
+    <button data-tab="dashboard" class="active">Dasbor Guru</button>
+    <button data-tab="rekap">Rekap Guru</button>
+    <button data-tab="santri" id="tabSantri" class="hidden">Presensi Santri</button>
+    <button data-tab="rekapSantri" id="tabRekapSantri" class="hidden">Rekap Santri</button>
     <button data-tab="guru" id="tabGuru" class="hidden">Data Guru</button>
     <button data-tab="member" id="tabMember" class="hidden">Data Member</button>
     <button data-tab="proker">Proker</button>
@@ -140,7 +141,7 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
   </nav>
   <main class="content">
     
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD GURU -->
     <section id="dashboardView">
       <div class="welcome-card" id="welcomeMsg"></div>
       <div class="stats-grid" id="statsGrid">
@@ -152,25 +153,57 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
         <div class="stat-box tidak"><div class="num" id="statTidak">0</div><div class="label">Absen</div></div>
       </div>
       <div class="card">
-        <h2>📋 Presensi Hari Ini</h2>
+        <h2>📋 Presensi Guru Hari Ini</h2>
         <div id="todayDate" style="font-size: 13px; color: #888; margin-bottom: 12px;"></div>
         <div id="todayAttendance"></div>
       </div>
     </section>
 
-    <!-- REKAP -->
+    <!-- REKAP GURU -->
     <section id="rekapView" class="hidden">
       <div class="card">
-        <h2>📊 Rekap Bulanan</h2>
+        <h2>📊 Rekap Guru Bulanan</h2>
         <div class="form-row">
           <input type="month" id="rekapMonth" style="max-width: 200px;">
           <button class="btn-sm" onclick="downloadPDF()" id="btnDownloadPDF" style="background:var(--neon-green); color:#000; font-weight:bold;">⬇️ Download PDF</button>
         </div>
-        <!-- Table dibungkus div id untuk PDF -->
         <div id="rekapTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 10px; border-radius: 8px;">
           <table id="rekapTable">
             <thead><tr><th>Nama Guru</th><th>Kelas</th><th>Tepat</th><th>Telat</th><th>Ijin</th><th>Sakit</th><th>Absen</th><th>Total</th></tr></thead>
             <tbody id="rekapBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRESENSI SANTRI -->
+    <section id="santriView" class="hidden">
+      <div class="card hidden" id="santriAdminForm">
+        <h2>➕ Tambah Santri (Admin)</h2>
+        <div class="form-row">
+          <input type="text" id="newSantriName" placeholder="Nama Santri">
+          <select id="newSantriClass"><option value="A">Kelas A</option><option value="B">Kelas B</option><option value="C">Kelas C</option></select>
+          <button class="btn-sm" onclick="addSantri()">Tambah</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🎒 Presensi Santri Hari Ini</h2>
+        <div id="santriAttendanceList"></div>
+      </div>
+    </section>
+
+    <!-- REKAP SANTRI -->
+    <section id="rekapSantriView" class="hidden">
+      <div class="card">
+        <h2>📊 Rekap Santri Bulanan</h2>
+        <div class="form-row">
+          <input type="month" id="rekapSantriMonth" style="max-width: 200px;">
+          <button class="btn-sm" onclick="downloadPDFSantri()" id="btnDownloadPDFSantri" style="background:var(--neon-green); color:#000; font-weight:bold;">⬇️ Download PDF</button>
+        </div>
+        <div id="rekapSantriTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 10px; border-radius: 8px;">
+          <table id="rekapSantriTable">
+            <thead><tr><th>Nama Santri</th><th>Kelas</th><th>Hadir</th><th>Sakit</th><th>Ijin</th><th>Total</th></tr></thead>
+            <tbody id="rekapSantriBody"></tbody>
           </table>
         </div>
       </div>
@@ -183,6 +216,9 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
         <div class="form-row">
           <input type="text" id="newGuruName" placeholder="Nama guru">
           <select id="newGuruClass"><option value="A">Kelas A</option><option value="B">Kelas B</option><option value="C">Kelas C</option></select>
+          <label style="color:#fff; font-size:12px; display:flex; align-items:center; gap:5px;">
+            <input type="checkbox" id="newGuruWali"> Wali Kelas
+          </label>
           <button class="btn-sm" onclick="addTeacher()">Tambah</button>
         </div>
       </div>
@@ -207,7 +243,6 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
 
     <!-- PROKER -->
     <section id="prokerView" class="hidden">
-      <!-- Form Proker sekarang BISA DIAKSES SEMUA ORANG -->
       <div class="card" id="prokerForm">
         <h2>➕ Tambah Proker</h2>
         <div class="form-row">
@@ -235,8 +270,8 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
       </div>
       <div class="card" style="border-color: var(--neon-red);">
         <h2 style="color: var(--neon-red);">⚠️ Zona Berbahaya</h2>
-        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Tindakan ini akan menghapus seluruh riwayat presensi secara permanen.</p>
-        <button class="btn-danger" onclick="resetAttendance()">Reset Semua Data Presensi</button>
+        <p style="font-size: 12px; color: #888; margin-bottom: 10px;">Tindakan ini akan menghapus seluruh riwayat presensi guru secara permanen.</p>
+        <button class="btn-danger" onclick="resetAttendance()">Reset Semua Data Presensi Guru</button>
       </div>
     </section>
 
@@ -302,13 +337,22 @@ function showApp() {
     document.getElementById('tabSetting').classList.remove('hidden');
     document.getElementById('statsGrid').classList.remove('hidden');
     document.getElementById('btnDownloadPDF').style.display = 'inline-block';
+    document.getElementById('btnDownloadPDFSantri').style.display = 'inline-block';
+    document.getElementById('santriAdminForm').classList.remove('hidden');
   } else {
     document.getElementById('tabGuru').classList.add('hidden');
     document.getElementById('tabMember').classList.add('hidden');
     document.getElementById('tabSetting').classList.add('hidden');
     document.getElementById('statsGrid').classList.add('hidden');
-    document.getElementById('btnDownloadPDF').style.display = 'none'; // Sembunyikan PDF untuk member
+    document.getElementById('btnDownloadPDF').style.display = 'none';
+    document.getElementById('btnDownloadPDFSantri').style.display = 'none'; // Hanya admin atau guru kelas? Biarkan admin & guru bisa unduh kelasnya
+    document.getElementById('santriAdminForm').classList.add('hidden');
   }
+  
+  // Tampilkan tab Santri untuk Admin & Member
+  document.getElementById('tabSantri').classList.remove('hidden');
+  document.getElementById('tabRekapSantri').classList.remove('hidden');
+
   switchTab('dashboard');
 }
 function doLogout() { API.call('POST', '/logout').catch(()=>{}); API.logout(); }
@@ -329,9 +373,11 @@ document.getElementById('loginForm').addEventListener('submit', async e => {
 
 function switchTab(name) {
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  ['dashboard','rekap','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
+  ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
   if (name === 'dashboard') renderDashboard();
   if (name === 'rekap')     renderRekap();
+  if (name === 'santri')    renderSantri();
+  if (name === 'rekapSantri') renderRekapSantri();
   if (name === 'guru')      renderGuru();
   if (name === 'member')    renderMember();
   if (name === 'proker')    renderProker();
@@ -339,7 +385,7 @@ function switchTab(name) {
 }
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-/* ============ DASHBOARD & PRESENSI ============ */
+/* ============ DASHBOARD GURU ============ */
 async function renderDashboard() {
   try {
     const [teachers, attendance] = await Promise.all([API.call('GET', '/teachers'), API.call('GET', '/attendance')]);
@@ -365,10 +411,9 @@ async function renderDashboard() {
     let displayTeachers = teachers;
     if (API.user.role === 'member') displayTeachers = teachers.filter(t => t.id === API.user.teacherId);
 
-    // Cek jam sekarang WIB (Untuk UI tombol)
     const now = new Date();
     const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-    const isPast1710 = wibTime.getHours() > 17 || (wibTime.getHours() === 17 && wibTime.getMinutes() >= 10);
+    const isPast1700 = wibTime.getHours() >= 17;
 
     ['A','B','C'].forEach(c => {
       const list = displayTeachers.filter(t => t.class === c);
@@ -380,7 +425,6 @@ async function renderDashboard() {
         
         let buttonsHtml = '';
         if (API.user.role === 'admin' || cur !== '') {
-            // Tampilan untuk Admin atau Member yang sudah absen
             buttonsHtml = `
                 <button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Hadir</button>
                 <button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Telat</button>
@@ -388,11 +432,9 @@ async function renderDashboard() {
                 <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit')" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Sakit</button>
                 <button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Absen</button>
             `;
-        } else if (!isPast1710) {
-            // Member belum absen & belum jam 17:10
-            buttonsHtml = `<span style="font-size:11px; color:var(--neon-orange);">Presensi dibuka jam 17:10 WIB</span>`;
+        } else if (!isPast1700) {
+            buttonsHtml = `<span style="font-size:11px; color:var(--neon-orange);">Presensi dibuka jam 17:00 WIB</span>`;
         } else {
-            // Member belum absen & sudah jam 17:10
             buttonsHtml = `
                 <button class="att-btn tepat" onclick="markAttendance('${t.id}','tepat', null)">Hadir</button>
                 <button class="att-btn telat" onclick="markAttendance('${t.id}','telat', null)">Telat</button>
@@ -406,9 +448,7 @@ async function renderDashboard() {
 
         html += `<div class="teacher-row">
           <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c}</span></div>
-          <div class="att-buttons">
-            ${buttonsHtml}
-          </div>
+          <div class="att-buttons">${buttonsHtml}</div>
           <div class="upload-area hidden" id="upload-${t.id}">
              <label style="font-size:11px;color:var(--neon-purple)">Upload Bukti (Wajib):</label>
              <input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}')" style="font-size:10px;color:#fff;width:100%;">
@@ -455,58 +495,135 @@ function handleImageUpload(event, teacherId) {
 async function markAttendance(teacherId, status, image) {
   try { 
       const res = await API.call('POST', '/attendance', { teacherId, date: todayStr(), status, image }); 
-      
-      if(res.status && res.status !== status) {
-        toast('Waktu melebihi 17:45, tercatat Telat', true);
-      } else if (API.user.role === 'member') {
-        // Menampilkan Pesan Sukses Khusus Member
-        renderWelcome(true); 
-        toast('Presensi Berhasil! ☺️🙏', false);
-      } else {
-        toast('Presensi tersimpan ✓'); 
-      }
+      if(res.status && res.status !== status) toast('Waktu melebihi 18:00, tercatat Telat', true);
+      else if (API.user.role === 'member') { renderWelcome(true); toast('Presensi Berhasil! ☺️🙏', false); }
+      else toast('Presensi tersimpan ✓'); 
       renderDashboard(); 
   } catch (e) { toast(e.message, true); }
 }
 
-/* ============ DOWNLOAD PDF ============ */
-function downloadPDF() {
-  const element = document.getElementById('rekapTableContainer');
-  const monthInput = document.getElementById('rekapMonth').value;
-  
+/* ============ PRESENSI SANTRI ============ */
+async function renderSantri() {
+  try {
+    const [santri, attendance] = await Promise.all([API.call('GET', '/santri'), API.call('GET', '/santri_attendance')]);
+    const today = todayStr();
+    const todayAtt = {};
+    attendance.filter(a => a.date === today).forEach(a => todayAtt[a.santriId] = a);
+
+    const isAdmin = API.user.role === 'admin';
+    document.getElementById('santriAdminForm').classList.toggle('hidden', !isAdmin);
+
+    const container = document.getElementById('santriAttendanceList');
+    let html = '';
+    
+    const classes = ['A', 'B', 'C'];
+    classes.forEach(c => {
+      const list = santri.filter(s => s.class === c);
+      if (!list.length) return;
+      html += `<div class="class-section"><div class="class-header">Kelas ${c}</div>`;
+      list.forEach(s => {
+        const record = todayAtt[s.id] || null;
+        const cur = record ? record.status : '';
+        
+        html += `<div class="teacher-row">
+          <div class="teacher-info">
+            <span class="teacher-name">${esc(s.name)}</span>
+            <span class="teacher-class">Kelas ${c}</span>
+            ${record && record.note ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(record.note)}</span>` : ''}
+          </div>
+          <div class="att-buttons">
+            <button class="att-btn tepat ${cur==='hadir'?'active':''}" onclick="markSantriAtt('${s.id}','hadir')">Hadir</button>
+            <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="markSantriAtt('${s.id}','sakit')">Sakit</button>
+            <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')">Ijin</button>
+            ${isAdmin ? `<button class="icon-btn del" onclick="deleteSantri('${s.id}','${esc(s.name)}')">🗑️</button>` : ''}
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    container.innerHTML = html || '<div class="empty">Belum ada data santri di kelas Anda.</div>';
+  } catch (e) { toast(e.message, true); }
+}
+
+async function markSantriAtt(santriId, status, note = null) {
+  try {
+    await API.call('POST', '/santri_attendance', { santriId, date: todayStr(), status, note });
+    toast('Presensi santri tersimpan ✓');
+    renderSantri();
+  } catch (e) { toast(e.message, true); }
+}
+
+function promptSantriIjin(santriId) {
+  const note = prompt("Masukkan keterangan ijin (bebas):");
+  if (note !== null) {
+    markSantriAtt(santriId, 'ijin', note);
+  }
+}
+
+async function addSantri() {
+  const name = document.getElementById('newSantriName').value.trim();
+  const cls = document.getElementById('newSantriClass').value;
+  if (!name) return toast('Nama wajib diisi', true);
+  try { await API.call('POST', '/santri', { name, class: cls }); document.getElementById('newSantriName').value = ''; toast('Santri ditambahkan'); renderSantri(); }
+  catch (e) { toast(e.message, true); }
+}
+
+async function deleteSantri(id, name) {
+  if (!confirm(`Hapus santri "${name}"?`)) return;
+  try { await API.call('DELETE', '/santri/' + id); toast('Santri dihapus'); renderSantri(); }
+  catch (e) { toast(e.message, true); }
+}
+
+/* ============ REKAP SANTRI ============ */
+async function renderRekapSantri() {
+  const input = document.getElementById('rekapSantriMonth');
+  if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  try {
+    const data = await API.call('GET', '/rekap_santri?month=' + input.value);
+    const tbody = document.getElementById('rekapSantriBody');
+    tbody.innerHTML = data.map(r => `<tr>
+      <td>${esc(r.name)}</td><td>Kelas ${r.class}</td>
+      <td><span class="badge tepat">${r.hadir}</span></td>
+      <td><span class="badge sakit">${r.sakit}</span></td>
+      <td><span class="badge ijin">${r.ijin}</span></td>
+      <td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Belum ada data.</td></tr>';
+  } catch (e) { toast(e.message, true); }
+}
+document.getElementById('rekapSantriMonth').addEventListener('change', renderRekapSantri);
+
+function downloadPDFSantri() {
+  const element = document.getElementById('rekapSantriTableContainer');
+  const monthInput = document.getElementById('rekapSantriMonth').value;
   if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
 
   const opt = {
     margin:       10,
-    filename:     `Rekap_Presensi_TPA_PAMAN_${monthInput}.pdf`,
+    filename:     `Rekap_Santri_TPA_PAMAN_${monthInput}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  { scale: 2 },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
 
-  // Ubah warna background sebentar agar PDF tidak hitam
   const originalBg = element.style.background;
   const originalColor = element.style.color;
   element.style.background = '#ffffff';
   element.style.color = '#000000';
   
-  // Ubah warna teks tabel sebentar
   const ths = element.querySelectorAll('th');
   const tds = element.querySelectorAll('td');
   ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; });
   tds.forEach(td => { td.style.color = '#000'; });
 
   html2pdf().set(opt).from(element).save().then(() => {
-    // Kembalikan warna semula
     element.style.background = originalBg;
     element.style.color = originalColor;
     ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; });
     tds.forEach(td => { td.style.color = '#ccc'; });
-    toast('PDF berhasil diunduh');
+    toast('PDF Santri berhasil diunduh');
   });
 }
 
-/* ============ REKAP ============ */
+/* ============ REKAP GURU ============ */
 async function renderRekap() {
   const input = document.getElementById('rekapMonth');
   if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
@@ -525,13 +642,48 @@ async function renderRekap() {
 }
 document.getElementById('rekapMonth').addEventListener('change', renderRekap);
 
-/* ============ GURU & MEMBER (ADMIN) ============ */
+function downloadPDF() {
+  const element = document.getElementById('rekapTableContainer');
+  const monthInput = document.getElementById('rekapMonth').value;
+  if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
+
+  const opt = {
+    margin:       10,
+    filename:     `Rekap_Guru_TPA_PAMAN_${monthInput}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+
+  const originalBg = element.style.background;
+  const originalColor = element.style.color;
+  element.style.background = '#ffffff';
+  element.style.color = '#000000';
+  
+  const ths = element.querySelectorAll('th');
+  const tds = element.querySelectorAll('td');
+  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; });
+  tds.forEach(td => { td.style.color = '#000'; });
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    element.style.background = originalBg;
+    element.style.color = originalColor;
+    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; });
+    tds.forEach(td => { td.style.color = '#ccc'; });
+    toast('PDF berhasil diunduh');
+  });
+}
+
+/* ============ GURU & MEMBER ============ */
 async function renderGuru() {
   try {
     const teachers = await API.call('GET', '/teachers');
     const list = document.getElementById('guruList');
     list.innerHTML = teachers.map(t => `<div class="teacher-row">
-        <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${t.class}</span></div>
+        <div class="teacher-info">
+          <span class="teacher-name">${esc(t.name)} ${t.isWaliKelas ? '<span style="color:var(--neon-green);font-size:12px;">⭐ Wali Kelas</span>' : ''}</span>
+          <span class="teacher-class">Kelas ${t.class}</span>
+        </div>
         <button class="icon-btn del" onclick="deleteTeacher('${t.id}','${esc(t.name)}')">🗑️</button>
       </div>`).join('') || '<div class="empty">Belum ada guru.</div>';
   } catch (e) { toast(e.message, true); }
@@ -539,8 +691,9 @@ async function renderGuru() {
 async function addTeacher() {
   const name = document.getElementById('newGuruName').value.trim();
   const cls = document.getElementById('newGuruClass').value;
+  const isWaliKelas = document.getElementById('newGuruWali').checked;
   if (!name) return toast('Nama wajib diisi', true);
-  try { await API.call('POST', '/teachers', { name, class: cls }); document.getElementById('newGuruName').value = ''; toast('Guru ditambahkan'); renderGuru(); }
+  try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; toast('Guru ditambahkan'); renderGuru(); }
   catch (e) { toast(e.message, true); }
 }
 async function deleteTeacher(id, name) {
@@ -587,7 +740,7 @@ async function deleteMember(id, username) {
   catch (e) { toast(e.message, true); }
 }
 
-/* ============ PROKER (BISA DIAKSES SEMUA MEMBER) ============ */
+/* ============ PROKER ============ */
 async function renderProker() {
   try {
     const proker = await API.call('GET', '/proker');
@@ -650,12 +803,12 @@ async function changeCredentials() {
 }
 
 async function resetAttendance() {
-  if (!confirm('APAKAH ANDA YAKIN? Seluruh data presensi akan dihapus permanen!')) return;
+  if (!confirm('APAKAH ANDA YAKIN? Seluruh data presensi guru akan dihapus permanen!')) return;
   if (!confirm('Ini tidak bisa dibatalkan. Lanjutkan?')) return;
   
   try {
     await API.call('DELETE', '/attendance');
-    toast('Data presensi berhasil di-reset');
+    toast('Data presensi guru berhasil di-reset');
     renderDashboard();
   } catch (e) { toast(e.message, true); }
 }
