@@ -14,18 +14,15 @@ function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
     const initial = {
       users: [
-        { id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null },
-        { id: 'u2', username: 'guru', password: 'guru123', role: 'member', name: 'Ustadz Ahmad Fauzi', teacherId: 't1' }
+        { id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null }
       ],
       teachers: [
         { id: 't1', name: 'Ustadz Ahmad Fauzi', class: 'A', isWaliKelas: true },
-        { id: 't2', name: 'Ustadzah Fatimah', class: 'B', isWaliKelas: false },
-        { id: 't3', name: 'Ustadz Yusuf Habibi', class: 'C', isWaliKelas: false }
+        { id: 't2', name: 'Ustadzah Fatimah', class: 'B', isWaliKelas: false }
       ],
       santri: [
         { id: 's1', name: 'Santri A1', class: 'A' },
-        { id: 's2', name: 'Santri B1', class: 'B' },
-        { id: 's3', name: 'Santri C1', class: 'C' }
+        { id: 's2', name: 'Santri B1', class: 'B' }
       ],
       attendance: [],
       santri_attendance: [],
@@ -87,7 +84,7 @@ app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ============ GURU & MEMBER ============ */
+/* ============ GURU & MEMBER (ADMIN BISA TAMBAH ADMIN) ============ */
 app.get('/api/teachers', auth, (req, res) => res.json(loadData().teachers));
 app.post('/api/teachers', auth, adminOnly, (req, res) => {
   const { name, class: cls, isWaliKelas } = req.body;
@@ -108,10 +105,12 @@ app.get('/api/users', auth, adminOnly, (req, res) => {
   res.json(data.users.map(u => ({ id: u.id, username: u.username, name: u.name, role: u.role, teacherId: u.teacherId })));
 });
 app.post('/api/users', auth, adminOnly, (req, res) => {
-  const { username, password, name, teacherId } = req.body;
+  const { username, password, name, teacherId, role } = req.body;
   const data = loadData();
   if (data.users.find(u => u.username === username)) return res.status(400).json({ error: 'Username sudah dipakai' });
-  const u = { id: 'u' + Date.now(), username, password, role: 'member', name, teacherId: teacherId || null };
+  
+  // Role bisa 'admin' atau 'member'
+  const u = { id: 'u' + Date.now(), username, password, role: role || 'member', name, teacherId: teacherId || null };
   data.users.push(u); saveData(data); res.json(u);
 });
 app.delete('/api/users/:id', auth, adminOnly, (req, res) => {
@@ -137,7 +136,6 @@ app.post('/api/attendance', auth, (req, res) => {
     return res.status(403).json({ error: 'Hanya bisa absen untuk diri sendiri' });
   }
 
-  // Pembukaan Portal Jam 17:00 WIB
   if (req.user.role === 'member') {
     const now = new Date();
     const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
@@ -150,7 +148,6 @@ app.post('/api/attendance', auth, (req, res) => {
     return res.status(400).json({ error: 'Wajib melampirkan bukti gambar untuk Ijin/Sakit' });
   }
 
-  // Logika Telat Jam 18:00 WIB
   let finalStatus = status;
   if (req.user.role === 'member' && status === 'tepat') {
     const now = new Date();
@@ -178,7 +175,6 @@ app.delete('/api/attendance', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ============ REKAP GURU ============ */
 app.get('/api/rekap', auth, (req, res) => {
   const month = req.query.month || '';
   const data = loadData();
@@ -201,7 +197,7 @@ app.get('/api/rekap', auth, (req, res) => {
   }));
 });
 
-/* ============ SANTRI (PRESENSI PER KELAS) ============ */
+/* ============ SANTRI (PRESENSI MASSAL & LOCK) ============ */
 app.get('/api/santri', auth, (req, res) => {
   const data = loadData();
   if (req.user.role === 'admin') {
@@ -209,7 +205,7 @@ app.get('/api/santri', auth, (req, res) => {
   } else {
     const teacher = data.teachers.find(t => t.id === req.user.teacherId);
     if (!teacher) return res.json([]);
-    res.json(data.santri.filter(s => s.class === teacher.class)); // Filter per kelas guru
+    res.json(data.santri.filter(s => s.class === teacher.class));
   }
 });
 
@@ -230,36 +226,54 @@ app.delete('/api/santri/:id', auth, adminOnly, (req, res) => {
 app.get('/api/santri_attendance', auth, (req, res) => {
   const data = loadData();
   if (req.user.role === 'admin') return res.json(data.santri_attendance);
-  
   const teacher = data.teachers.find(t => t.id === req.user.teacherId);
   if (!teacher) return res.json([]);
-  
-  // Hanya kirim presensi santri di kelas guru tersebut
   const mySantriIds = data.santri.filter(s => s.class === teacher.class).map(s => s.id);
   res.json(data.santri_attendance.filter(a => mySantriIds.includes(a.santriId)));
 });
 
-app.post('/api/santri_attendance', auth, (req, res) => {
-  const { santriId, date, status, note } = req.body;
+// SIMPAN MASSAL (BULK SAVE)
+app.post('/api/santri_attendance/bulk', auth, (req, res) => {
+  const { date, records } = req.body; // records = [{ santriId, status, note }]
   const data = loadData();
   
-  const santri = data.santri.find(s => s.id === santriId);
-  if (!santri) return res.status(404).json({ error: 'Santri tidak ditemukan' });
+  // 1. Validasi Hak Akses & Kunci Edit
+  for (let rec of records) {
+    const santri = data.santri.find(s => s.id === rec.santriId);
+    if (!santri) return res.status(404).json({ error: 'Santri tidak ditemukan' });
 
-  // Cek apakah guru berhak mengabsen santri ini
-  if (req.user.role === 'member') {
-    const teacher = data.teachers.find(t => t.id === req.user.teacherId);
-    if (!teacher || teacher.class !== santri.class) {
-      return res.status(403).json({ error: 'Anda hanya bisa mengabsen santri di kelas Anda' });
+    if (req.user.role === 'member') {
+      const teacher = data.teachers.find(t => t.id === req.user.teacherId);
+      if (!teacher || teacher.class !== santri.class) {
+        return res.status(403).json({ error: `Anda tidak berhak mengabsen santri ${santri.name}` });
+      }
+    }
+
+    const ex = data.santri_attendance.find(a => a.santriId === rec.santriId && a.date === date);
+    if (ex && req.user.role !== 'admin') {
+      return res.status(403).json({ error: `Presensi ${santri.name} sudah dikunci. Hanya Admin yang bisa mengubah.` });
     }
   }
 
-  const ex = data.santri_attendance.find(a => a.santriId === santriId && a.date === date);
-  if (ex) {
-    ex.status = status; ex.note = note || null; ex.by = req.user.name;
-  } else {
-    data.santri_attendance.push({ id: 'sa' + Date.now(), santriId, date, status, note: note || null, by: req.user.name });
+  // 2. Simpan Data
+  for (let rec of records) {
+    const exIndex = data.santri_attendance.findIndex(a => a.santriId === rec.santriId && a.date === date);
+    if (exIndex !== -1) {
+      data.santri_attendance[exIndex].status = rec.status;
+      data.santri_attendance[exIndex].note = rec.note || null;
+      data.santri_attendance[exIndex].by = req.user.name;
+    } else {
+      data.santri_attendance.push({ 
+        id: 'sa' + Date.now() + Math.random().toString(36).substr(2, 5), 
+        santriId: rec.santriId, 
+        date, 
+        status: rec.status, 
+        note: rec.note || null, 
+        by: req.user.name 
+      });
+    }
   }
+  
   saveData(data);
   res.json({ ok: true });
 });
@@ -283,6 +297,7 @@ app.get('/api/rekap_santri', auth, (req, res) => {
       hadir: recs.filter(r => r.status === 'hadir').length,
       sakit: recs.filter(r => r.status === 'sakit').length,
       ijin: recs.filter(r => r.status === 'ijin').length,
+      absen: recs.filter(r => r.status === 'absen').length,
       total: recs.length
     };
   }));
@@ -299,7 +314,6 @@ app.put('/api/proker/:id', auth, adminOnly, (req, res) => {
   const data = loadData();
   const p = data.proker.find(x => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Tidak ditemukan' });
-  if (req.body.name) p.name = req.body.name;
   if (req.body.status) p.status = req.body.status;
   if (req.body.day) p.day = req.body.day;
   if (req.body.date) p.date = req.body.date;
