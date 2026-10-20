@@ -7,7 +7,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// Limit diperbesar untuk menampung gambar base64
 app.use(express.json({ limit: '15mb' })); 
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
 
@@ -59,20 +58,17 @@ app.post('/api/login', (req, res) => {
 app.post('/api/logout', auth, (req, res) => { delete sessions[req.headers['authorization']]; res.json({ ok: true }); });
 app.get('/api/me', auth, (req, res) => res.json(req.user));
 
-// Ganti Kredensial Admin
 app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
   const { newUsername, newPassword } = req.body;
   const data = loadData();
   const user = data.users.find(u => u.id === req.user.id);
   if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
-  
   if (newUsername && newUsername !== user.username) {
     if (data.users.find(u => u.username === newUsername)) return res.status(400).json({ error: 'Username sudah dipakai' });
     user.username = newUsername;
-    req.user.username = newUsername; // Update session
+    req.user.username = newUsername;
   }
   if (newPassword) user.password = newPassword;
-  
   saveData(data);
   res.json({ ok: true });
 });
@@ -127,16 +123,24 @@ app.post('/api/attendance', auth, (req, res) => {
     return res.status(403).json({ error: 'Hanya bisa absen untuk diri sendiri' });
   }
 
-  // Validasi Ijin/Sakit wajib gambar
+  // Validasi Jam 17:10 WIB (Hanya untuk Member)
+  if (req.user.role === 'member') {
+    const now = new Date();
+    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    if (wibTime.getHours() < 17 || (wibTime.getHours() === 17 && wibTime.getMinutes() < 10)) {
+      return res.status(400).json({ error: 'Presensi belum dibuka. Silakan kembali jam 17:10 WIB.' });
+    }
+  }
+
   if ((status === 'ijin' || status === 'sakit') && req.user.role === 'member' && !image) {
     return res.status(400).json({ error: 'Wajib melampirkan bukti gambar untuk Ijin/Sakit' });
   }
 
-  // Logika Waktu: Tepat waktu maksimal jam 17:45 WIB
-  const now = new Date();
-  const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+  // Logika Telat Jam 17:45 WIB
   let finalStatus = status;
   if (req.user.role === 'member' && status === 'tepat') {
+    const now = new Date();
+    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     if (wibTime.getHours() > 17 || (wibTime.getHours() === 17 && wibTime.getMinutes() > 45)) {
       finalStatus = 'telat';
     }
@@ -153,7 +157,6 @@ app.post('/api/attendance', auth, (req, res) => {
   saveData(data); res.json({ ok: true, status: finalStatus });
 });
 
-// FITUR RESET PRESENSI (Admin Only)
 app.delete('/api/attendance', auth, adminOnly, (req, res) => {
   const data = loadData();
   data.attendance = [];
@@ -184,14 +187,14 @@ app.get('/api/rekap', auth, (req, res) => {
   }));
 });
 
-/* ============ PROKER ============ */
+/* ============ PROKER (BISA DIAKSES SEMUA MEMBER) ============ */
 app.get('/api/proker', auth, (req, res) => res.json(loadData().proker));
-app.post('/api/proker', auth, adminOnly, (req, res) => {
+app.post('/api/proker', auth, (req, res) => { // Hapus adminOnly
   const data = loadData();
-  const p = { id: 'p' + Date.now(), name: req.body.name, status: req.body.status || 'tidak', day: req.body.day, date: req.body.date };
+  const p = { id: 'p' + Date.now(), name: req.body.name, status: req.body.status || 'tidak', day: req.body.day, date: req.body.date, creator: req.user.name };
   data.proker.push(p); saveData(data); res.json(p);
 });
-app.put('/api/proker/:id', auth, adminOnly, (req, res) => {
+app.put('/api/proker/:id', auth, adminOnly, (req, res) => { // Hanya admin yang bisa edit status
   const data = loadData();
   const p = data.proker.find(x => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Tidak ditemukan' });
@@ -201,7 +204,7 @@ app.put('/api/proker/:id', auth, adminOnly, (req, res) => {
   if (req.body.date) p.date = req.body.date;
   saveData(data); res.json(p);
 });
-app.delete('/api/proker/:id', auth, adminOnly, (req, res) => {
+app.delete('/api/proker/:id', auth, adminOnly, (req, res) => { // Hanya admin yang bisa hapus
   const data = loadData();
   data.proker = data.proker.filter(p => p.id !== req.params.id);
   saveData(data); res.json({ ok: true });
