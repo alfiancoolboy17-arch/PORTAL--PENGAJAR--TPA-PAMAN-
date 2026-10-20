@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Presensi TPA PAMAN</title>
+<!-- Library untuk Download PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
 :root{--bg:#0a0a0c;--card-bg:#121216;--neon-cyan:#00f3ff;--neon-green:#00ff88;--neon-red:#ff0055;--neon-orange:#ffaa00;--neon-purple:#b000ff;--text:#e0e0e0;}
@@ -86,8 +88,8 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
 .icon-btn{width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;font-size:14px;background:transparent;}
 .icon-btn.edit{color:var(--neon-orange);border:1px solid var(--neon-orange);}
 .icon-btn.del{color:var(--neon-red);border:1px solid var(--neon-red);}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:1px solid var(--neon-green);color:var(--neon-green);padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;z-index:1000;opacity:0;transition:.3s;pointer-events:none;}
-.toast.show{opacity:1;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:1px solid var(--neon-green);color:var(--neon-green);padding:12px 24px;border-radius:30px;font-size:14px;font-weight:600;z-index:1000;opacity:0;transition:.3s;pointer-events:none;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-10px);}
 .toast.error{border-color:var(--neon-red);color:var(--neon-red);}
 </style>
 </head>
@@ -160,9 +162,13 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
     <section id="rekapView" class="hidden">
       <div class="card">
         <h2>📊 Rekap Bulanan</h2>
-        <div class="form-row"><input type="month" id="rekapMonth" style="max-width: 200px;"></div>
-        <div style="overflow-x: auto;">
-          <table>
+        <div class="form-row">
+          <input type="month" id="rekapMonth" style="max-width: 200px;">
+          <button class="btn-sm" onclick="downloadPDF()" id="btnDownloadPDF" style="background:var(--neon-green); color:#000; font-weight:bold;">⬇️ Download PDF</button>
+        </div>
+        <!-- Table dibungkus div id untuk PDF -->
+        <div id="rekapTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 10px; border-radius: 8px;">
+          <table id="rekapTable">
             <thead><tr><th>Nama Guru</th><th>Kelas</th><th>Tepat</th><th>Telat</th><th>Ijin</th><th>Sakit</th><th>Absen</th><th>Total</th></tr></thead>
             <tbody id="rekapBody"></tbody>
           </table>
@@ -201,7 +207,8 @@ table td{padding:8px 4px;border-bottom:1px solid #222;color:#ccc}
 
     <!-- PROKER -->
     <section id="prokerView" class="hidden">
-      <div class="card hidden" id="prokerAdminForm">
+      <!-- Form Proker sekarang BISA DIAKSES SEMUA ORANG -->
+      <div class="card" id="prokerForm">
         <h2>➕ Tambah Proker</h2>
         <div class="form-row">
           <input type="text" id="newProkerName" placeholder="Nama program kerja">
@@ -256,24 +263,30 @@ const API = {
 };
 
 const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-function toast(msg, isErr) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' error' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 2500); }
+function toast(msg, isErr) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' error' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3500); }
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showLogin() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('appView').classList.add('hidden'); }
 
-// FUNGSI WELCOME MESSAGE
-function renderWelcome() {
+function renderWelcome(isSuccessAttendance = false) {
   let name = API.user.name;
-  let prefix = "Selamat datang";
+  let welcomeText = "Selamat datang";
   let suffix = " ☺️🙏";
   
-  if (API.user.role === 'member') {
+  if (isSuccessAttendance) {
+    welcomeText = "Selamat anda telah presensi hari ini";
+  } else if (API.user.role === 'member') {
     if (!name.toLowerCase().includes('ustadz') && !name.toLowerCase().includes('ustadzah')) {
       name = "Ustadz/Ustadzah " + name;
     }
   } else {
     name = "Admin";
   }
-  document.getElementById('welcomeMsg').innerText = `${prefix}, ${name}${suffix}`;
+  
+  if (isSuccessAttendance) {
+    document.getElementById('welcomeMsg').innerText = `${welcomeText}${suffix}`;
+  } else {
+    document.getElementById('welcomeMsg').innerText = `${welcomeText}, ${name}${suffix}`;
+  }
 }
 
 function showApp() {
@@ -288,11 +301,13 @@ function showApp() {
     document.getElementById('tabMember').classList.remove('hidden');
     document.getElementById('tabSetting').classList.remove('hidden');
     document.getElementById('statsGrid').classList.remove('hidden');
+    document.getElementById('btnDownloadPDF').style.display = 'inline-block';
   } else {
     document.getElementById('tabGuru').classList.add('hidden');
     document.getElementById('tabMember').classList.add('hidden');
     document.getElementById('tabSetting').classList.add('hidden');
     document.getElementById('statsGrid').classList.add('hidden');
+    document.getElementById('btnDownloadPDF').style.display = 'none'; // Sembunyikan PDF untuk member
   }
   switchTab('dashboard');
 }
@@ -325,8 +340,6 @@ function switchTab(name) {
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
 /* ============ DASHBOARD & PRESENSI ============ */
-let currentImageBase64 = null; // Untuk menyimpan gambar sebelum di-submit
-
 async function renderDashboard() {
   try {
     const [teachers, attendance] = await Promise.all([API.call('GET', '/teachers'), API.call('GET', '/attendance')]);
@@ -352,6 +365,11 @@ async function renderDashboard() {
     let displayTeachers = teachers;
     if (API.user.role === 'member') displayTeachers = teachers.filter(t => t.id === API.user.teacherId);
 
+    // Cek jam sekarang WIB (Untuk UI tombol)
+    const now = new Date();
+    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    const isPast1710 = wibTime.getHours() > 17 || (wibTime.getHours() === 17 && wibTime.getMinutes() >= 10);
+
     ['A','B','C'].forEach(c => {
       const list = displayTeachers.filter(t => t.class === c);
       if (!list.length) return;
@@ -359,26 +377,43 @@ async function renderDashboard() {
       list.forEach(t => {
         const record = todayAtt[t.id] || null;
         const cur = record ? record.status : '';
-        const disabled = API.user.role === 'member' && cur !== '' ? 'disabled' : '';
         
-        // Cek apakah ada gambar bukti
+        let buttonsHtml = '';
+        if (API.user.role === 'admin' || cur !== '') {
+            // Tampilan untuk Admin atau Member yang sudah absen
+            buttonsHtml = `
+                <button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Hadir</button>
+                <button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Telat</button>
+                <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin')" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Ijin</button>
+                <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit')" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Sakit</button>
+                <button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null)" ${API.user.role === 'member' && cur !== '' ? 'disabled' : ''}>Absen</button>
+            `;
+        } else if (!isPast1710) {
+            // Member belum absen & belum jam 17:10
+            buttonsHtml = `<span style="font-size:11px; color:var(--neon-orange);">Presensi dibuka jam 17:10 WIB</span>`;
+        } else {
+            // Member belum absen & sudah jam 17:10
+            buttonsHtml = `
+                <button class="att-btn tepat" onclick="markAttendance('${t.id}','tepat', null)">Hadir</button>
+                <button class="att-btn telat" onclick="markAttendance('${t.id}','telat', null)">Telat</button>
+                <button class="att-btn ijin" onclick="promptImage('${t.id}','ijin')">Ijin</button>
+                <button class="att-btn sakit" onclick="promptImage('${t.id}','sakit')">Sakit</button>
+                <button class="att-btn tidak" onclick="markAttendance('${t.id}','tidak', null)">Absen</button>
+            `;
+        }
+
         const imgBtn = (record && record.image) ? `<br><a href="${record.image}" target="_blank" style="font-size:10px;color:var(--neon-cyan);">Lihat Bukti Foto</a>` : '';
 
         html += `<div class="teacher-row">
           <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c}</span></div>
           <div class="att-buttons">
-            ${API.user.role === 'admin' || cur === '' ? `
-                <button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null)" ${disabled}>Hadir</button>
-                <button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null)" ${disabled}>Telat</button>
-                <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin')" ${disabled}>Ijin</button>
-                <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit')" ${disabled}>Sakit</button>
-                <button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null)" ${disabled}>Absen</button>
-            ` : `<span class="badge ${cur}">${cur.toUpperCase()}</span>${imgBtn}`}
+            ${buttonsHtml}
           </div>
           <div class="upload-area hidden" id="upload-${t.id}">
              <label style="font-size:11px;color:var(--neon-purple)">Upload Bukti (Wajib):</label>
              <input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}')" style="font-size:10px;color:#fff;width:100%;">
           </div>
+          ${imgBtn}
           </div>`;
       });
       html += `</div>`;
@@ -387,13 +422,11 @@ async function renderDashboard() {
   } catch (e) { toast(e.message, true); }
 }
 
-// Fungsi untuk menampilkan input file saat klik Ijin/Sakit
 function promptImage(teacherId, status) {
   document.getElementById(`upload-${teacherId}`).classList.remove('hidden');
   toast(`Silakan upload bukti ${status} di bawah nama.`, false);
 }
 
-// Fungsi kompresi gambar agar muat di JSON
 function handleImageUpload(event, teacherId) {
   const file = event.target.files[0];
   if (!file) return;
@@ -408,7 +441,7 @@ function handleImageUpload(event, teacherId) {
       canvas.height = img.height * scaleSize;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const base64 = canvas.toDataURL('image/jpeg', 0.7); // Kompresi 70%
+      const base64 = canvas.toDataURL('image/jpeg', 0.7);
       
       const isIjin = document.querySelector('.att-btn.ijin').classList.contains('active');
       const status = isIjin ? 'ijin' : 'sakit';
@@ -422,10 +455,55 @@ function handleImageUpload(event, teacherId) {
 async function markAttendance(teacherId, status, image) {
   try { 
       const res = await API.call('POST', '/attendance', { teacherId, date: todayStr(), status, image }); 
-      if(res.status && res.status !== status) toast('Waktu melebihi 17:45, tercatat Telat', true);
-      else toast('Presensi tersimpan ✓'); 
+      
+      if(res.status && res.status !== status) {
+        toast('Waktu melebihi 17:45, tercatat Telat', true);
+      } else if (API.user.role === 'member') {
+        // Menampilkan Pesan Sukses Khusus Member
+        renderWelcome(true); 
+        toast('Presensi Berhasil! ☺️🙏', false);
+      } else {
+        toast('Presensi tersimpan ✓'); 
+      }
       renderDashboard(); 
   } catch (e) { toast(e.message, true); }
+}
+
+/* ============ DOWNLOAD PDF ============ */
+function downloadPDF() {
+  const element = document.getElementById('rekapTableContainer');
+  const monthInput = document.getElementById('rekapMonth').value;
+  
+  if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
+
+  const opt = {
+    margin:       10,
+    filename:     `Rekap_Presensi_TPA_PAMAN_${monthInput}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+
+  // Ubah warna background sebentar agar PDF tidak hitam
+  const originalBg = element.style.background;
+  const originalColor = element.style.color;
+  element.style.background = '#ffffff';
+  element.style.color = '#000000';
+  
+  // Ubah warna teks tabel sebentar
+  const ths = element.querySelectorAll('th');
+  const tds = element.querySelectorAll('td');
+  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; });
+  tds.forEach(td => { td.style.color = '#000'; });
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    // Kembalikan warna semula
+    element.style.background = originalBg;
+    element.style.color = originalColor;
+    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = '#0a0a0c'; });
+    tds.forEach(td => { td.style.color = '#ccc'; });
+    toast('PDF berhasil diunduh');
+  });
 }
 
 /* ============ REKAP ============ */
@@ -509,18 +587,18 @@ async function deleteMember(id, username) {
   catch (e) { toast(e.message, true); }
 }
 
-/* ============ PROKER ============ */
+/* ============ PROKER (BISA DIAKSES SEMUA MEMBER) ============ */
 async function renderProker() {
   try {
     const proker = await API.call('GET', '/proker');
     const isAdmin = API.user.role === 'admin';
-    document.getElementById('prokerAdminForm').classList.toggle('hidden', !isAdmin);
     const list = document.getElementById('prokerList');
     
     list.innerHTML = proker.map(p => `<div class="proker-item">
       <div class="proker-info">
         <div class="proker-name">${esc(p.name)}</div>
-        <div class="proker-date">${p.day ? p.day + ', ' : ''}${p.date ? new Date(p.date).toLocaleDateString('id-ID') : 'Tanpa Tanggal'}</div>
+        <div class="proker-date">${p.day ? p.day + ', ' : ''}${p.date ? new Date(p.date).toLocaleDateString('id-ID') : 'Tanpa Tanggal'} 
+        ${p.creator ? `<br><span style="color:#666; font-size:10px;">Oleh: ${esc(p.creator)}</span>` : ''}</div>
       </div>
       <span class="badge ${p.status === 'terlaksana' ? 'terlaksana' : 'belum'}">${p.status === 'terlaksana' ? '✓ Terlaksana' : '✗ Belum'}</span>
       ${isAdmin ? `<div class="proker-actions">
