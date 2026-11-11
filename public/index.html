@@ -27,7 +27,7 @@
     --canvas-symbol: 'rgba(66, 232, 255,';
 }
 
-/* === TEMA TERANG (LIGHT MODE) === */
+/* === TEMA TERANG === */
 [data-theme="light"] {
     --bg: #f4f7f6;
     --card-bg: #ffffff;
@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 /* Supaya konten di atas canvas */
 #loginView, #appView, .toast, .action-bar { position: relative; z-index: 10; }
 
-/* 2. Lampu Warna-Warni Border (Gamer Style) */
+/* 2. Lampu Warna-Warni Border */
 @keyframes neon-glow {
     0%, 100% { box-shadow: 0 0 10px #42e8ff, inset 0 0 5px #42e8ff; border-color: #42e8ff; }
     25% { box-shadow: 0 0 10px #ff4fd8, inset 0 0 5px #ff4fd8; border-color: #ff4fd8; }
@@ -57,16 +57,23 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
     75% { box-shadow: 0 0 10px #ffeb3b, inset 0 0 5px #ffeb3b; border-color: #ffeb3b; }
 }
 .card, .teacher-row, .stat-box, .login-card, .proker-item {
-    background: var(--card-bg) !important; 
-    border: 2px solid var(--line) !important; 
+    background: var(--card-bg) !important; border: 2px solid var(--line) !important; 
     animation: neon-glow 5s linear infinite !important; 
     transition: 0.3s;
 }
 [data-theme="light"] .card, [data-theme="light"] .teacher-row, [data-theme="light"] .stat-box, [data-theme="light"] .login-card {
-    animation: none !important; /* Matikan neon kedip di light mode agar mata tidak sakit */
+    animation: none !important; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
     border: 1px solid #ddd !important;
 }
+
+/* Animasi Goyang jika Login Salah */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+.shake { animation: shake 0.5s ease-in-out; }
 
 /* Login View */
 #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -81,9 +88,10 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 .btn{padding:12px 20px;border:none;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;transition:.3s;}
 .btn-primary{background:transparent;color:var(--neon-green);border:2px solid var(--neon-green);width:100%;box-shadow:0 0 10px rgba(0,255,136,0.2)}
 .btn-primary:hover{background:var(--neon-green);color:#000;}
-.error-msg{color:var(--neon-red);font-size:13px;margin-top:10px;min-height:18px;}
+.error-msg{color:var(--neon-red);font-size:13px;margin-top:10px;min-height:18px; font-weight:bold;}
+.login-hint { font-size: 11px; color: var(--muted); margin-top: 15px; border-top: 1px dashed var(--line); padding-top: 10px; }
 
-/* === HEADER & MENU GARIS TIGA === */
+/* App View */
 #appView{min-height:100vh;display:flex;flex-direction:column}
 header.app-header{background:var(--header-bg);color:var(--text);padding:15px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);}
 .header-left{display:flex;align-items:center;gap:12px}
@@ -92,7 +100,6 @@ header.app-header{background:var(--header-bg);color:var(--text);padding:15px 5%;
 .header-sub{font-size:11px;color:var(--neon-green)}
 .header-right{display:flex;align-items:center;gap:12px}
 
-/* Tombol Pengaturan Header */
 .icon-btn-header {background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); padding:6px 10px; border-radius:20px; font-size:14px; cursor:pointer; transition:0.3s;}
 .icon-btn-header:hover {background:var(--neon-cyan); color:#000;}
 .music-btn {background: var(--neon-purple); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 0 10px var(--neon-purple); width: auto;}
@@ -184,7 +191,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 
 <!-- LOGIN VIEW -->
 <div id="loginView">
-  <div class="login-card">
+  <div class="login-card" id="loginCard">
     <div class="logo-wrap">
       <svg viewBox="0 0 100 100" width="80" height="80">
         <circle cx="50" cy="50" r="48" fill="none" stroke="#00ff88" stroke-width="3"/>
@@ -196,10 +203,17 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     <h1>PORTAL PRESENSI</h1>
     <h2>TPA PAMAN</h2>
     <form id="loginForm" style="margin-top: 20px;">
-      <div class="input-group"><label>Username</label><input type="text" id="username" required></div>
-      <div class="input-group"><label>Password</label><input type="password" id="password" required></div>
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="username" value="admin" required>
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" value="admin123" required>
+      </div>
       <button type="submit" class="btn btn-primary" id="loginBtn">Login System</button>
       <div class="error-msg" id="loginError"></div>
+      <div class="login-hint">Login awal: <b>admin</b> / <b>admin123</b></div>
     </form>
   </div>
 </div>
@@ -217,16 +231,10 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     </div>
     
     <div class="header-right">
-      <!-- TOMBOL TEMA GELAP/TERANG -->
       <button class="icon-btn-header" onclick="toggleTheme()" id="themeToggle" title="Ubah Tema">🌙</button>
-      <!-- TOMBOL MUSIK -->
       <button class="music-btn" onclick="toggleMusic()" id="musicBtn">🎵 Musik</button>
-      <!-- JAM DIGITAL -->
       <div class="live-clock" id="liveClock" style="display:none;">00:00</div>
-      
       <button class="btn-logout" onclick="doLogout()">Keluar</button>
-      
-      <!-- TOMBOL GARIS TIGA (HAMBURGER) -->
       <div class="hamburger" onclick="toggleMenu()">☰</div>
       
       <!-- MENU DROPDOWN -->
@@ -244,7 +252,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   </header>
 
   <main class="content" style="padding-bottom: 100px;">
-    
     <!-- DASHBOARD GURU -->
     <section id="dashboardView">
       <div class="welcome-card" id="welcomeMsg"></div>
@@ -432,23 +439,20 @@ function toggleTheme() {
     localStorage.setItem('tpa_theme', newTheme);
     document.getElementById('themeToggle').innerText = newTheme === 'light' ? '☀️' : '🌙';
     
-    // Gambar ulang background agar menyesuaikan warna
     if(typeof initCanvas === 'function') initCanvas(); 
 }
 
-// Muat tema saat web pertama dibuka
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('tpa_theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     document.getElementById('themeToggle').innerText = savedTheme === 'light' ? '☀️' : '🌙';
 });
 
-// ================= MENU GARIS TIGA (HAMBURGER) =================
+// ================= MENU GARIS TIGA =================
 function toggleMenu() {
     const menu = document.getElementById('myMenu');
     menu.classList.toggle('show');
 }
-// Tutup menu jika klik di luar area
 window.onclick = function(event) {
     if (!event.target.matches('.hamburger')) {
         const menu = document.getElementById('myMenu');
@@ -458,7 +462,7 @@ window.onclick = function(event) {
     }
 }
 
-// ================= SUARA TTS (AHLAN WAS SAHLAN) =================
+// ================= SUARA TTS =================
 function ucapkanSalam(nama) {
     if ('speechSynthesis' in window) {
         let msg = new SpeechSynthesisUtterance(`Ahlan wa sahlan, ${nama}`);
@@ -469,7 +473,7 @@ function ucapkanSalam(nama) {
     }
 }
 
-// ================= MUSIK BACKGROUND (YOUTUBE) =================
+// ================= MUSIK BACKGROUND =================
 let player, isMusicPlaying = false;
 window.onYouTubeIframeAPIReady = function() {
     player = new YT.Player('yt-player', {
@@ -497,7 +501,7 @@ function toggleMusic() {
     }
 }
 
-// ================= ANIMASI BACKGROUND (ADAPTIF GELAP/TERANG) =================
+// ================= ANIMASI BACKGROUND =================
 let canvas, ctx, width, height, time = 0, coins = [];
 let animationId;
 
@@ -515,14 +519,13 @@ function initCanvas() {
     draw();
 }
 
-function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; }
+function resize() { if(canvas) { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; } }
 window.addEventListener('resize', resize);
 
 function draw() {
     if(!ctx) return;
     ctx.clearRect(0, 0, width, height); time += 0.02; 
     
-    // Ambil warna dari CSS Variable sesuai tema
     const style = getComputedStyle(document.body);
     const col1 = style.getPropertyValue('--canvas-line1').trim();
     const col2 = style.getPropertyValue('--canvas-line2').trim();
@@ -552,7 +555,6 @@ function draw() {
     animationId = requestAnimationFrame(draw);
 }
 
-// Mulai canvas saat halaman dimuat
 initCanvas();
 
 // ================= SUARA BEEP =================
@@ -606,10 +608,10 @@ function toast(msg, isErr) { const t = document.getElementById('toast'); t.textC
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showLogin() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('appView').classList.add('hidden'); }
 
-// ================= FITUR GEOLOCATION (LOKASI TPA) =================
+// ================= FITUR GEOLOCATION (50 METER) =================
 const TPA_LAT = -7.823713; 
 const TPA_LON = 110.384600; 
-const MAX_RADIUS_METER = 50; // Sesuai permintaan: 50 meter
+const MAX_RADIUS_METER = 50; 
 
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   var R = 6371; 
@@ -649,7 +651,7 @@ function checkLocation(callback) {
   );
 }
 
-// ================= FITUR PENCARIAN & EXPORT CSV =================
+// ================= FITUR PENCARIAN & CSV =================
 function filterTable(inputId, tableId) {
   const filter = document.getElementById(inputId).value.toLowerCase();
   const tbody = document.getElementById(tableId).querySelector('tbody');
@@ -730,30 +732,50 @@ function doLogout() { API.call('POST', '/logout').catch(()=>{}); API.logout(); }
 
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError'); const card = document.getElementById('loginCard');
   err.textContent = ''; btn.disabled = true; btn.textContent = 'Memproses...';
+  
   try {
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value }) });
+    const res = await fetch('/api/login', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value }) 
+    });
+    
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Gagal login');
-    API.token = data.token; API.user = data.user; localStorage.setItem('token', data.token);
-    playSound('success'); showApp();
-  } catch (e) { playSound('error'); err.textContent = e.message; }
-  finally { btn.disabled = false; btn.textContent = 'Login System'; }
+    
+    if (!res.ok) {
+        throw new Error(data.error || 'Username atau password salah');
+    }
+    
+    API.token = data.token; 
+    API.user = data.user; 
+    localStorage.setItem('token', data.token);
+    playSound('success'); 
+    showApp();
+    
+  } catch (error) { 
+      playSound('error'); 
+      // Tampilkan Pesan Error
+      err.textContent = error.message; 
+      // Animasi Goyang
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 500);
+  } finally { 
+      btn.disabled = false; 
+      btn.textContent = 'Login System'; 
+  }
 });
 
 // === MENU TAB ===
 function switchTab(name) {
-  // Sembunyikan semua view
   ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
   document.getElementById('santriActionBar').classList.add('hidden'); 
   
-  // Update status tombol aktif di menu dropdown
   document.querySelectorAll('.menu-dropdown button').forEach(b => b.classList.remove('active'));
   const activeBtn = document.querySelector(`.menu-dropdown button[data-tab="${name}"]`);
   if(activeBtn) activeBtn.classList.add('active');
 
-  // Tutup dropdown setelah memilih
   document.getElementById('myMenu').classList.remove('show');
   
   if (name === 'dashboard') renderDashboard();
@@ -794,7 +816,6 @@ async function renderDashboard() {
         const ctx = document.getElementById('dashboardChart').getContext('2d');
         if (dashChart) dashChart.destroy();
         
-        // Cek tema untuk warna teks chart
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const textColor = isLight ? '#333' : '#e0e0e0';
         const borderColor = isLight ? '#fff' : '#121216';
