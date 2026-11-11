@@ -37,7 +37,7 @@ function loadData() {
   if (!admin) {
     data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
   } else {
-    admin.password = 'admin123'; // Reset password ke admin123
+    admin.password = 'admin123'; // Fitur darurat reset password
   }
 
   try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch(e) {}
