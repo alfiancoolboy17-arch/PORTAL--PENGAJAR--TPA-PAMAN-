@@ -653,7 +653,7 @@ async function renderSantri() {
       }); html += `</div>`;
     });
     container.innerHTML = html || '<div class="empty" style="text-align:center; padding:20px;">Belum ada data santri.</div>';
-    if (Object.keys(santriDraft).length > 0 && !isLocked) document.getElementById('santriActionBar').classList.remove('hidden');
+    if (Object.keys(santriDraft).length > 0) document.getElementById('santriActionBar').classList.remove('hidden');
     else document.getElementById('santriActionBar').classList.add('hidden');
   } catch (e) { toast(e.message, true); }
 }
