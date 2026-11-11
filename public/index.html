@@ -324,59 +324,36 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 
 <div class="toast" id="toast"></div>
 
-<!-- LIBRARY DIPINDAHKAN KE BAWAH AGAR TIDAK MEMBLOKIR TAMPILAN AWAL -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <div id="yt-player" style="display:none;"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-// ==========================================
-// FUNGSI LOGIN (DIPANGGIL DARI ONSBUMIT)
-// ==========================================
 async function handleLogin(e) {
     e.preventDefault();
-    const btn = document.getElementById('loginBtn');
-    const err = document.getElementById('loginError');
-    const card = document.getElementById('loginCard');
-    
-    err.textContent = '';
-    btn.disabled = true;
-    btn.textContent = 'Memproses...';
+    const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError'); const card = document.getElementById('loginCard');
+    err.textContent = ''; btn.disabled = true; btn.textContent = 'Memproses...';
     
     try {
         const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: document.getElementById('username').value.trim(),
-                password: document.getElementById('password').value
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value })
         });
-        
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Login gagal');
         
         localStorage.setItem('token', data.token);
         API.token = data.token;
         API.user = data.user;
-        
-        // Langsung tampilkan app tanpa reload halaman
         showApp();
-        
     } catch (error) {
-        playSound('error');
-        err.textContent = error.message;
-        card.classList.add('shake');
-        setTimeout(() => card.classList.remove('shake'), 500);
-        btn.disabled = false;
-        btn.textContent = 'Login System';
+        playSound('error'); err.textContent = error.message;
+        card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 500);
+        btn.disabled = false; btn.textContent = 'Login System';
     }
 }
 
-// ==========================================
-// FUNGSI PENDUKUNG
-// ==========================================
 function toggleTheme() {
     const body = document.body; const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -403,9 +380,6 @@ function ucapkanSalam(nama) {
     }
 }
 
-// ==========================================
-// MUSIK & CANVAS
-// ==========================================
 let player, isMusicPlaying = false;
 window.onYouTubeIframeAPIReady = function() {
     if (typeof YT !== 'undefined' && YT.Player) {
@@ -414,20 +388,15 @@ window.onYouTubeIframeAPIReady = function() {
 }
 function toggleMusic() {
     const btn = document.getElementById('musicBtn');
-    if (!player || typeof player.playVideo !== 'function') {
-        toast("Musik sedang dimuat, coba lagi...", false);
-        return;
-    }
+    if (!player || typeof player.playVideo !== 'function') { toast("Musik sedang dimuat, coba lagi...", false); return; }
     if (isMusicPlaying) { player.pauseVideo(); isMusicPlaying = false; btn.innerHTML = "🎵 Musik"; }
     else { player.playVideo(); isMusicPlaying = true; btn.innerHTML = "⏸️ Pause"; }
 }
 
 let canvas, ctx, width, height, time = 0, coins = []; let animationId;
 function initCanvas() {
-    canvas = document.getElementById('bg-graph'); 
-    if (!canvas) return;
-    ctx = canvas.getContext('2d'); 
-    resize(); 
+    canvas = document.getElementById('bg-graph'); if (!canvas) return;
+    ctx = canvas.getContext('2d'); resize(); 
     coins = [];
     for (let i = 0; i < 30; i++) coins.push({ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speed: 1 + Math.random() * 2, size: 20 + Math.random() * 30, opacity: 0.05 + Math.random() * 0.15 }); 
     cancelAnimationFrame(animationId); draw();
@@ -435,8 +404,7 @@ function initCanvas() {
 function resize() { if(canvas) { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; } }
 window.addEventListener('resize', resize);
 function draw() {
-    if(!ctx) return; 
-    ctx.clearRect(0, 0, width, height); time += 0.02; 
+    if(!ctx) return; ctx.clearRect(0, 0, width, height); time += 0.02; 
     const style = getComputedStyle(document.body);
     const colors = [style.getPropertyValue('--canvas-line1').trim(), style.getPropertyValue('--canvas-line2').trim()];
     const colSymbol = style.getPropertyValue('--canvas-symbol').trim();
@@ -457,7 +425,6 @@ function draw() {
     });
     animationId = requestAnimationFrame(draw);
 }
-// Jalankan canvas
 setTimeout(initCanvas, 100);
 
 function playSound(type) {
@@ -477,20 +444,30 @@ function playSound(type) {
   } catch (e) {}
 }
 
-// ==========================================
-// API & LOGIKA APP
-// ==========================================
 const API = {
   token: localStorage.getItem('token') || '', user: null,
   async call(method, path, body) {
-    const res = await fetch('/api' + path, { method, headers: { 'Content-Type': 'application/json', 'Authorization': this.token }, body: body ? JSON.stringify(body) : undefined });
-    if (res.status === 401) { this.logout(); throw new Error('Sesi berakhir'); }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
-    return data;
+    try {
+      const res = await fetch('/api' + path, { 
+          method, headers: { 'Content-Type': 'application/json', 'Authorization': this.token }, 
+          body: body ? JSON.stringify(body) : undefined 
+      });
+      if (res.status === 401) { this.logout(); throw new Error('Sesi berakhir. Silakan login ulang.'); }
+      
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e) { throw new Error('Respon server tidak valid'); }
+      
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan pada server');
+      return data;
+    } catch (err) {
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') throw new Error('Koneksi ke server terputus.');
+      throw err;
+    }
   },
   logout() { localStorage.removeItem('token'); this.token = ''; this.user = null; showLogin(); }
 };
+
 const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(msg, isErr) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' error' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3500); }
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -517,9 +494,6 @@ function checkLocation(callback) {
   );
 }
 
-// ==========================================
-// RENDER UI
-// ==========================================
 function filterTable(inputId, tableId) {
   const filter = document.getElementById(inputId).value.toLowerCase();
   const rows = document.getElementById(tableId).querySelector('tbody').querySelectorAll('tr');
@@ -597,7 +571,6 @@ async function renderDashboard() {
         document.getElementById('statTelat').textContent = sTelat; document.getElementById('statIjin').textContent = sIjin;
         document.getElementById('statSakit').textContent = sSakit; document.getElementById('statTidak').textContent = sTidak;
         
-        // PENGAMAN CHART.JS
         if (typeof Chart !== 'undefined') {
             const canvasEl = document.getElementById('dashboardChart');
             if (canvasEl) {
@@ -749,7 +722,19 @@ async function renderGuru() {
     list.innerHTML = teachers.map(t => `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(t.name)} ${t.isWaliKelas ? '<span style="color:var(--neon-green);font-size:12px;">⭐ Wali Kelas</span>' : ''}</span><span class="teacher-class">Kelas ${t.class}</span></div><button class="icon-btn del" onclick="deleteTeacher('${t.id}','${esc(t.name)}')">🗑️</button></div>`).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada guru.</div>';
   } catch (e) { toast(e.message, true); }
 }
-async function addTeacher() { const name = document.getElementById('newGuruName').value.trim(); const cls = document.getElementById('newGuruClass').value; const isWaliKelas = document.getElementById('newGuruWali').checked; if (!name) return toast('Nama wajib diisi', true); try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; playSound('success'); toast('Guru ditambahkan'); renderGuru(); } catch (e) { playSound('error'); toast(e.message, true); } }
+async function addTeacher() { 
+  const name = document.getElementById('newGuruName').value.trim(); 
+  const cls = document.getElementById('newGuruClass').value; 
+  const isWaliKelas = document.getElementById('newGuruWali').checked; 
+  if (!name) return toast('Nama wajib diisi', true); 
+  try { 
+    await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); 
+    document.getElementById('newGuruName').value = ''; 
+    playSound('success'); 
+    toast('Guru ditambahkan'); 
+    renderGuru(); 
+  } catch (e) { playSound('error'); toast(e.message, true); } 
+}
 async function deleteTeacher(id, name) { if (!confirm(`Hapus guru "${name}"?`)) return; try { await API.call('DELETE', '/teachers/' + id); playSound('success'); toast('Guru dihapus'); renderGuru(); } catch (e) { playSound('error'); toast(e.message, true); } }
 
 async function renderMember() {
@@ -788,9 +773,6 @@ async function changeCredentials() {
   try { await API.call('PUT', '/admin/credentials', { newUsername, newPassword }); playSound('success'); toast('Kredensial berhasil diubah'); if (newUsername) API.user.username = newUsername; renderSetting(); } catch (e) { playSound('error'); toast(e.message, true); }
 }
 
-// ==========================================
-// CEK SESI LOGIN SAAT HALAMAN DIMUAT
-// ==========================================
 (async () => { 
     if (API.token) { 
         try { 
