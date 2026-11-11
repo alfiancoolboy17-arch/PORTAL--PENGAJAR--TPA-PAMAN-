@@ -7,41 +7,36 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-app.use(express.json({ limit: '50mb' })); 
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '15mb' })); 
+app.use(express.urlencoded({ limit: '15mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- FUNGSI DATABASE (ANTI CRASH) ---
 function loadData() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      const init = { users: [{ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null }], teachers: [], santri: [], attendance: [], santri_attendance: [], proker: [] };
-      fs.writeFileSync(DATA_FILE, JSON.stringify(init, null, 2));
-      return init;
-    }
-    let data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    // Pastikan admin selalu ada
-    if (!data.users || data.users.length === 0) {
-      data.users = [{ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null }];
-      fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    } else {
-      // Paksa reset password admin ke admin123
-      let admin = data.users.find(u => u.username === 'admin');
-      if(admin) admin.password = 'admin123';
-    }
-    return data;
-  } catch (e) {
-    const init = { users: [{ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null }], teachers: [], santri: [], attendance: [], santri_attendance: [], proker: [] };
-    return init;
+  let data;
+  if (!fs.existsSync(DATA_FILE)) {
+    data = { users: [], teachers: [], santri: [], attendance: [], santri_attendance: [], proker: [] };
+  } else {
+    try { data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } 
+    catch (e) { data = { users: [], teachers: [], santri: [], attendance: [], santri_attendance: [], proker: [] }; }
   }
+
+  // Paksa selalu ada admin
+  let admin = data.users.find(u => u.username === 'admin');
+  if (!admin) {
+    data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
+  } else {
+    admin.password = 'admin123'; // Fitur Darurat: Reset password setiap server restart
+  }
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  return data;
 }
 const saveData = d => fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2));
 const sessions = {};
 
-// --- MIDDLEWARE ---
 const auth = (req, res, next) => {
   const t = req.headers['authorization'];
-  if (!t || !sessions[t]) return res.status(401).json({ error: 'Sesi berakhir' });
+  if (!t || !sessions[t]) return res.status(401).json({ error: 'Unauthorized' });
   req.user = sessions[t];
   next();
 };
@@ -50,13 +45,19 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// --- AUTH ---
+// ================= LOGIN =================
 app.post('/api/login', (req, res) => {
+  console.log("Menerima request login dari:", req.body.username);
   const { username, password } = req.body;
   const data = loadData();
   const user = data.users.find(u => u.username === username && u.password === password);
-  if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
   
+  if (!user) {
+    console.log("LOGIN GAGAL: Password atau username salah");
+    return res.status(401).json({ error: 'Username atau password salah!' });
+  }
+  
+  console.log("LOGIN BERHASIL UNTUK:", user.username);
   const token = crypto.randomBytes(24).toString('hex');
   let teacherClass = null;
   if (user.teacherId) {
@@ -83,21 +84,17 @@ app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
   saveData(data); res.json({ ok: true });
 });
 
-// --- GURU ---
 app.get('/api/teachers', auth, (req, res) => res.json(loadData().teachers));
 app.post('/api/teachers', auth, adminOnly, (req, res) => {
   const data = loadData(); const t = { id: 't' + Date.now(), name: req.body.name, class: req.body.class, isWaliKelas: !!req.body.isWaliKelas };
   data.teachers.push(t); saveData(data); res.json(t);
 });
 app.delete('/api/teachers/:id', auth, adminOnly, (req, res) => {
-  const data = loadData();
-  data.teachers = data.teachers.filter(t => t.id !== req.params.id);
-  data.attendance = data.attendance.filter(a => a.teacherId !== req.params.id);
-  data.users = data.users.filter(u => u.teacherId !== req.params.id);
+  const data = loadData(); data.teachers = data.teachers.filter(t => t.id !== req.params.id);
+  data.attendance = data.attendance.filter(a => a.teacherId !== req.params.id); data.users = data.users.filter(u => u.teacherId !== req.params.id);
   saveData(data); res.json({ ok: true });
 });
 
-// --- USERS ---
 app.get('/api/users', auth, adminOnly, (req, res) => {
   res.json(loadData().users.map(u => ({ id: u.id, username: u.username, name: u.name, role: u.role, teacherId: u.teacherId })));
 });
@@ -113,7 +110,6 @@ app.delete('/api/users/:id', auth, adminOnly, (req, res) => {
   saveData(data); res.json({ ok: true });
 });
 
-// --- ABSEN GURU ---
 app.get('/api/attendance', auth, (req, res) => {
   const data = loadData();
   if (req.user.role === 'member') return res.json(data.attendance.filter(a => a.teacherId === req.user.teacherId));
@@ -148,7 +144,6 @@ app.get('/api/rekap', auth, (req, res) => {
   }));
 });
 
-// --- SANTRI ---
 app.get('/api/santri', auth, (req, res) => {
   const data = loadData();
   if (req.user.role === 'admin') res.json(data.santri);
@@ -199,7 +194,6 @@ app.get('/api/rekap_santri', auth, (req, res) => {
   }));
 });
 
-// --- PROKER ---
 app.get('/api/proker', auth, (req, res) => res.json(loadData().proker));
 app.post('/api/proker', auth, (req, res) => {
   const data = loadData(); const p = { id: 'p' + Date.now(), name: req.body.name, status: req.body.status || 'tidak', day: req.body.day, date: req.body.date, creator: req.user.name };
