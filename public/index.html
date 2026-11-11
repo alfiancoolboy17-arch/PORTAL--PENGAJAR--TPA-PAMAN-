@@ -34,7 +34,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 .btn-primary{background:transparent;color:var(--neon-green);border:2px solid var(--neon-green);width:100%;box-shadow:0 0 10px rgba(0,255,136,0.2)}
 .btn-primary:hover{background:var(--neon-green);color:#000;}
 .error-msg{color:var(--neon-red);font-size:13px;margin-top:10px;min-height:18px; font-weight:bold;}
-.login-hint { font-size: 11px; color: var(--muted); margin-top: 15px; border-top: 1px dashed var(--line); padding-top: 10px; }
 
 #appView{min-height:100vh;display:flex;flex-direction:column}
 header.app-header{background:var(--header-bg);color:var(--text);padding:15px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);}
@@ -142,15 +141,14 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     <form id="loginForm" onsubmit="handleLogin(event)" style="margin-top: 20px;">
       <div class="input-group">
         <label>Username</label>
-        <input type="text" id="username" value="admin" required>
+        <input type="text" id="username" placeholder="Masukkan username" required>
       </div>
       <div class="input-group">
         <label>Password</label>
-        <input type="password" id="password" value="admin123" required>
+        <input type="password" id="password" placeholder="Masukkan password" required>
       </div>
       <button type="submit" class="btn btn-primary" id="loginBtn">Login System</button>
       <div class="error-msg" id="loginError"></div>
-      <div class="login-hint">Login awal: <b>admin</b> / <b>admin123</b></div>
     </form>
   </div>
 </div>
