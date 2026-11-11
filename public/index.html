@@ -634,7 +634,7 @@ async function renderRekapSantri() {
   } catch (e) { toast(e.message, true); }
 }
 document.getElementById('rekapSantriMonth').addEventListener('change', renderRekapSantri);
-function downloadPDFSantri() { /* Kode PDF sama seperti sebelumnya */
+function downloadPDFSantri() { 
   const element = document.getElementById('rekapSantriTableContainer'); const monthInput = document.getElementById('rekapSantriMonth').value; if (!monthInput) return toast('Pilih bulan terlebih dahulu', true); playSound('success');
   const opt = { margin: 10, filename: `Rekap_Santri_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
   const originalBg = element.style.background; const originalColor = element.style.color; element.style.background = '#ffffff'; element.style.color = '#000000';
