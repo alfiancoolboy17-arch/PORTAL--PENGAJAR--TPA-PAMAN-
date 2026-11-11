@@ -126,7 +126,9 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     </div>
     <h1>PORTAL PRESENSI</h1>
     <h2>TPA PAMAN</h2>
-    <form id="loginForm" style="margin-top: 20px;">
+    
+    <!-- PERHATIKAN BARIS INI: onsubmit langsung memanggil fungsi handleLogin -->
+    <form id="loginForm" onsubmit="handleLogin(event)" style="margin-top: 20px;">
       <div class="input-group">
         <label>Username</label>
         <input type="text" id="username" value="admin" required>
@@ -169,6 +171,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   </header>
 
   <main class="content" style="padding-bottom: 100px;">
+    <!-- Isi Dashboard dan halaman lainnya (SAMA SEPERTI SEBELUMNYA) -->
     <section id="dashboardView">
       <div class="welcome-card" id="welcomeMsg"></div>
       <div class="date-filter hidden" id="guruDateFilter">
@@ -316,6 +319,52 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+// ==========================================
+// FUNGSI LOGIN (DITARUH PALING ATAS AGAR PASTI JALAN)
+// ==========================================
+async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('loginError');
+    const card = document.getElementById('loginCard');
+    
+    err.textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+    
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            throw new Error(data.error || 'Login gagal');
+        }
+        
+        // Simpan token dan Refresh Halaman
+        localStorage.setItem('token', data.token);
+        window.location.reload(); 
+        
+    } catch (error) {
+        playSound('error');
+        err.textContent = error.message;
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 500);
+        btn.disabled = false;
+        btn.textContent = 'Login System';
+    }
+}
+
+// ==========================================
+// FUNGSI LAINNYA
+// ==========================================
 function toggleTheme() {
     const body = document.body; const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -488,21 +537,6 @@ function showApp() {
   switchTab('dashboard');
 }
 function doLogout() { API.call('POST', '/logout').catch(()=>{}); API.logout(); }
-document.getElementById('loginForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError'); const card = document.getElementById('loginCard');
-  err.textContent = ''; btn.disabled = true; btn.textContent = 'Memproses...';
-  try {
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value }) });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Username atau password salah');
-    API.token = data.token; API.user = data.user; localStorage.setItem('token', data.token);
-    playSound('success'); showApp();
-  } catch (error) { 
-      playSound('error'); err.textContent = error.message; 
-      card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 500);
-  } finally { btn.disabled = false; btn.textContent = 'Login System'; }
-});
 function switchTab(name) {
   ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
   document.getElementById('santriActionBar').classList.add('hidden'); 
@@ -700,7 +734,23 @@ async function changeCredentials() {
   const newUsername = document.getElementById('setUsername').value.trim(); const newPassword = document.getElementById('setPassword').value; if (!newUsername && !newPassword) return toast('Isi salah satu kolom', true);
   try { await API.call('PUT', '/admin/credentials', { newUsername, newPassword }); playSound('success'); toast('Kredensial berhasil diubah'); if (newUsername) API.user.username = newUsername; renderSetting(); } catch (e) { playSound('error'); toast(e.message, true); }
 }
-(async () => { if (API.token) { try { API.user = await API.call('GET', '/me'); showApp(); return; } catch (e) {} } showLogin(); })();
+
+// ==========================================
+// CEK SESI LOGIN SAAT HALAMAN DIMUAT
+// ==========================================
+(async () => { 
+    if (API.token) { 
+        try { 
+            API.user = await API.call('GET', '/me'); 
+            showApp(); 
+            return; 
+        } catch (e) {
+            console.log("Token expired atau tidak valid");
+            localStorage.removeItem('token');
+        } 
+    } 
+    showLogin(); 
+})();
 </script>
 </body>
 </html>
