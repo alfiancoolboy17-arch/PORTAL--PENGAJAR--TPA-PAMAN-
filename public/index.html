@@ -8,74 +8,17 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-
-/* === TEMA VARIABEL === */
-:root {
-    --bg: #080b18;
-    --card-bg: #11182b;
-    --line: #243454;
-    --neon-cyan: #42e8ff;
-    --neon-green: #00ff88;
-    --neon-red: #ff0055;
-    --neon-orange: #ffaa00;
-    --neon-purple: #b000ff;
-    --text: #eaf3ff;
-    --muted: #9aabc5;
-    --header-bg: rgba(17,24,43,0.9);
-    --canvas-line1: 'rgba(66, 232, 255,';
-    --canvas-line2: 'rgba(255, 79, 216,';
-    --canvas-symbol: 'rgba(66, 232, 255,';
-}
-
-/* === TEMA TERANG === */
-[data-theme="light"] {
-    --bg: #f4f7f6;
-    --card-bg: #ffffff;
-    --line: #e0e0e0;
-    --text: #1a1a1a;
-    --muted: #666666;
-    --header-bg: rgba(255,255,255,0.95);
-    --canvas-line1: 'rgba(0, 150, 255,';
-    --canvas-line2: 'rgba(255, 0, 150,';
-    --canvas-symbol: 'rgba(0, 0, 0,';
-}
-
+:root { --bg: #080b18; --card-bg: #11182b; --line: #243454; --neon-cyan: #42e8ff; --neon-green: #00ff88; --neon-red: #ff0055; --neon-orange: #ffaa00; --neon-purple: #b000ff; --text: #eaf3ff; --muted: #9aabc5; --header-bg: rgba(17,24,43,0.9); --canvas-line1: 'rgba(66, 232, 255,'; --canvas-line2: 'rgba(255, 79, 216,'; --canvas-symbol: 'rgba(66, 232, 255,'; }
+[data-theme="light"] { --bg: #f4f7f6; --card-bg: #ffffff; --line: #e0e0e0; --text: #1a1a1a; --muted: #666666; --header-bg: rgba(255,255,255,0.95); --canvas-line1: 'rgba(0, 150, 255,'; --canvas-line2: 'rgba(255, 0, 150,'; --canvas-symbol: 'rgba(0, 0, 0,'; }
 body{background:var(--bg);color:var(--text);min-height:100vh;transition: background 0.3s, color 0.3s;overflow-x:hidden;background-image:radial-gradient(circle at top, var(--card-bg) 0, var(--bg) 70%);}
 .hidden{display:none!important}
-
-/* 1. Canvas Animasi Background */
 #bg-graph { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.8;}
-
-/* Supaya konten di atas canvas */
 #loginView, #appView, .toast, .action-bar { position: relative; z-index: 10; }
-
-/* 2. Lampu Warna-Warni Border */
-@keyframes neon-glow {
-    0%, 100% { box-shadow: 0 0 10px #42e8ff, inset 0 0 5px #42e8ff; border-color: #42e8ff; }
-    25% { box-shadow: 0 0 10px #ff4fd8, inset 0 0 5px #ff4fd8; border-color: #ff4fd8; }
-    50% { box-shadow: 0 0 10px #00ff88, inset 0 0 5px #00ff88; border-color: #00ff88; }
-    75% { box-shadow: 0 0 10px #ffeb3b, inset 0 0 5px #ffeb3b; border-color: #ffeb3b; }
-}
-.card, .teacher-row, .stat-box, .login-card, .proker-item {
-    background: var(--card-bg) !important; border: 2px solid var(--line) !important; 
-    animation: neon-glow 5s linear infinite !important; 
-    transition: 0.3s;
-}
-[data-theme="light"] .card, [data-theme="light"] .teacher-row, [data-theme="light"] .stat-box, [data-theme="light"] .login-card {
-    animation: none !important; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
-    border: 1px solid #ddd !important;
-}
-
-/* Animasi Goyang jika Login Salah */
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-    20%, 40%, 60%, 80% { transform: translateX(10px); }
-}
+@keyframes neon-glow { 0%, 100% { box-shadow: 0 0 10px #42e8ff, inset 0 0 5px #42e8ff; border-color: #42e8ff; } 25% { box-shadow: 0 0 10px #ff4fd8, inset 0 0 5px #ff4fd8; border-color: #ff4fd8; } 50% { box-shadow: 0 0 10px #00ff88, inset 0 0 5px #00ff88; border-color: #00ff88; } 75% { box-shadow: 0 0 10px #ffeb3b, inset 0 0 5px #ffeb3b; border-color: #ffeb3b; } }
+.card, .teacher-row, .stat-box, .login-card, .proker-item { background: var(--card-bg) !important; border: 2px solid var(--line) !important; animation: neon-glow 5s linear infinite !important; transition: 0.3s; }
+[data-theme="light"] .card, [data-theme="light"] .teacher-row, [data-theme="light"] .stat-box, [data-theme="light"] .login-card { animation: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important; border: 1px solid #ddd !important; }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 20%, 40%, 60%, 80% { transform: translateX(10px); } }
 .shake { animation: shake 0.5s ease-in-out; }
-
-/* Login View */
 #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{border-radius:20px;padding:40px 32px;width:100%;max-width:400px;text-align:center;}
 .logo-wrap{display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;background:var(--bg);border-radius:50%;margin-bottom:15px;border:2px solid var(--neon-green);box-shadow:0 0 15px var(--neon-green)}
@@ -90,8 +33,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 .btn-primary:hover{background:var(--neon-green);color:#000;}
 .error-msg{color:var(--neon-red);font-size:13px;margin-top:10px;min-height:18px; font-weight:bold;}
 .login-hint { font-size: 11px; color: var(--muted); margin-top: 15px; border-top: 1px dashed var(--line); padding-top: 10px; }
-
-/* App View */
 #appView{min-height:100vh;display:flex;flex-direction:column}
 header.app-header{background:var(--header-bg);color:var(--text);padding:15px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);}
 .header-left{display:flex;align-items:center;gap:12px}
@@ -99,24 +40,16 @@ header.app-header{background:var(--header-bg);color:var(--text);padding:15px 5%;
 .header-title{font-size:14px;font-weight:800;color:var(--neon-cyan);text-shadow:0 0 10px rgba(66,232,255,0.3);}
 .header-sub{font-size:11px;color:var(--neon-green)}
 .header-right{display:flex;align-items:center;gap:12px}
-
 .icon-btn-header {background:transparent; border:1px solid var(--neon-cyan); color:var(--neon-cyan); padding:6px 10px; border-radius:20px; font-size:14px; cursor:pointer; transition:0.3s;}
 .icon-btn-header:hover {background:var(--neon-cyan); color:#000;}
 .music-btn {background: var(--neon-purple); color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 0 10px var(--neon-purple); width: auto;}
 .btn-logout{background:transparent;border:1px solid var(--neon-red);color:var(--neon-red);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;}
 .btn-logout:hover{background:var(--neon-red);color:#fff;}
-
-/* Dropdown Menu */
 .hamburger{cursor:pointer;font-size:26px;color:var(--neon-cyan);user-select:none;}
-.menu-dropdown {
-    display: none; position: absolute; top: 70px; right: 5%;
-    background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px;
-    padding: 10px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 220px;
-}
+.menu-dropdown { display: none; position: absolute; top: 70px; right: 5%; background: var(--card-bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 220px; }
 .menu-dropdown.show { display: block; }
 .menu-dropdown button{display:block; width:100%; text-align:left; padding:12px 15px; background:none; border:none; color:var(--text); font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; transition:0.2s;}
 .menu-dropdown button:hover, .menu-dropdown button.active{background:var(--line); color:var(--neon-cyan);}
-
 main.content{flex:1;padding:20px 5%;max-width:1000px;margin:0 auto;width:100%}
 .card{border-radius:16px;padding:20px;margin-bottom:20px;}
 .card h2{font-size:16px;color:var(--neon-cyan);margin-bottom:15px;border-bottom:1px solid var(--line);padding-bottom:10px; text-shadow: 0 0 5px rgba(66,232,255,0.3);}
@@ -130,10 +63,8 @@ main.content{flex:1;padding:20px 5%;max-width:1000px;margin:0 auto;width:100%}
 .stat-box.ijin .num{color:var(--neon-purple);}
 .stat-box.sakit .num{color:var(--neon-cyan);}
 .stat-box.tidak .num{color:var(--neon-red);}
-
 .date-filter { display:flex; gap:10px; margin-bottom:15px; align-items:center; background:var(--card-bg); padding:12px; border-radius:8px; border:1px solid var(--line); flex-wrap:wrap;}
 .date-filter input { padding:8px 12px; border-radius:5px; border:1px solid var(--line); background:var(--bg); color:var(--text); outline:none;}
-
 .teacher-row{display:flex;align-items:center;justify-content:space-between;padding:15px;border-radius:10px;margin-bottom:10px;flex-wrap:wrap;gap:10px;}
 .teacher-info{display:flex;flex-direction:column}
 .teacher-name{font-weight:700;font-size:14px;color:var(--text)}
@@ -150,7 +81,6 @@ main.content{flex:1;padding:20px 5%;max-width:1000px;margin:0 auto;width:100%}
 .att-btn.sakit.active,.att-btn.sakit:hover{background:var(--neon-cyan);color:#000;}
 .att-btn.tidak{border-color:var(--neon-red);color:var(--neon-red)}
 .att-btn.tidak.active,.att-btn.tidak:hover{background:var(--neon-red);color:#fff;}
-
 .upload-area{margin-top:10px;width:100%;background:var(--bg);padding:10px;border-radius:8px;border:1px dashed var(--line);}
 table{width:100%;border-collapse:collapse;font-size:12px}
 table th{background:var(--bg);color:var(--neon-cyan);padding:10px 6px;text-align:left; font-weight:bold;}
@@ -162,10 +92,8 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 .badge.sakit{color:var(--neon-cyan);border:1px solid var(--neon-cyan)}
 .badge.tidak,.badge.belum{color:var(--neon-red);border:1px solid var(--neon-red)}
 .badge.terlaksana{color:var(--neon-green);border:1px solid var(--neon-green)}
-
 .search-box { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--neon-cyan); border-radius: 8px; color: var(--text); font-size: 13px; margin-bottom: 15px; outline: none; }
 .search-box:focus { box-shadow: 0 0 10px rgba(0,243,255,0.2); }
-
 .form-row{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
 .form-row input,.form-row select{flex:1;min-width:120px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--text);}
 .btn-sm{padding:12px 18px;font-size:13px;background:transparent;color:var(--neon-cyan);border:1px solid var(--neon-cyan);border-radius:8px;cursor:pointer; font-weight:bold;}
@@ -173,11 +101,9 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 .icon-btn{width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;font-size:16px;background:transparent;}
 .icon-btn.edit{color:var(--neon-orange);border:1px solid var(--neon-orange);}
 .icon-btn.del{color:var(--neon-red);border:1px solid var(--neon-red);}
-
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--card-bg);border:2px solid var(--neon-green);color:var(--neon-green);padding:14px 28px;border-radius:30px;font-size:14px;font-weight:700;z-index:1000;opacity:0;transition:.3s;pointer-events:none;text-align:center;box-shadow:0 0 20px rgba(0,255,136,0.4);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(-10px);}
 .toast.error{border-color:var(--neon-red);color:var(--neon-red);box-shadow:0 0 20px rgba(255,0,85,0.4);}
-
 .action-bar {position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 2px solid var(--neon-cyan); padding: 15px; display: flex; justify-content: center; gap: 15px; z-index: 100; box-shadow: 0 -4px 20px rgba(0,243,255,0.1);backdrop-filter:blur(10px);}
 .action-bar button {padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;}
 .btn-cancel {background: transparent; border: 1px solid var(--neon-red); color: var(--neon-red);}
@@ -186,10 +112,8 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 </head>
 <body data-theme="dark">
 
-<!-- Canvas Background Animasi -->
 <canvas id="bg-graph"></canvas>
 
-<!-- LOGIN VIEW -->
 <div id="loginView">
   <div class="login-card" id="loginCard">
     <div class="logo-wrap">
@@ -218,18 +142,12 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   </div>
 </div>
 
-<!-- APP VIEW -->
 <div id="appView" class="hidden">
   <header class="app-header">
     <div class="header-left">
-      <svg class="header-logo" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="48" fill="none" stroke="#00f3ff" stroke-width="3"/>
-        <path d="M30 78 L30 55 Q50 28 70 55 L70 78 Z" fill="#00ff88"/>
-        <path d="M45 78 L45 62 Q50 56 55 62 L55 78 Z" fill="#000"/>
-      </svg>
+      <svg class="header-logo" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="#00f3ff" stroke-width="3"/><path d="M30 78 L30 55 Q50 28 70 55 L70 78 Z" fill="#00ff88"/><path d="M45 78 L45 62 Q50 56 55 62 L55 78 Z" fill="#000"/></svg>
       <div><div class="header-title">PORTAL TPA PAMAN</div><div class="header-sub"><span id="userRole"></span></div></div>
     </div>
-    
     <div class="header-right">
       <button class="icon-btn-header" onclick="toggleTheme()" id="themeToggle" title="Ubah Tema">🌙</button>
       <button class="music-btn" onclick="toggleMusic()" id="musicBtn">🎵 Musik</button>
@@ -237,7 +155,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       <button class="btn-logout" onclick="doLogout()">Keluar</button>
       <div class="hamburger" onclick="toggleMenu()">☰</div>
       
-      <!-- MENU DROPDOWN -->
       <div id="myMenu" class="menu-dropdown">
         <button data-tab="dashboard" onclick="switchTab('dashboard')">Dasbor Guru</button>
         <button data-tab="rekap" onclick="switchTab('rekap')">Rekap Guru</button>
@@ -252,23 +169,14 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   </header>
 
   <main class="content" style="padding-bottom: 100px;">
-    <!-- DASHBOARD GURU -->
     <section id="dashboardView">
       <div class="welcome-card" id="welcomeMsg"></div>
-      
       <div class="date-filter hidden" id="guruDateFilter">
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterGuruDate" onchange="renderDashboard()">
         <span style="font-size:11px; color:var(--muted);">(Admin dapat mengedit riwayat)</span>
       </div>
-
-      <div class="card hidden" id="chartCard">
-        <h2>📈 Statistik Kehadiran</h2>
-        <div class="chart-container" style="height: 220px; display:flex; justify-content:center;">
-          <canvas id="dashboardChart"></canvas>
-        </div>
-      </div>
-
+      <div class="card hidden" id="chartCard"><h2>📈 Statistik Kehadiran</h2><div class="chart-container" style="height: 220px; display:flex; justify-content:center;"><canvas id="dashboardChart"></canvas></div></div>
       <div class="stats-grid" id="statsGrid">
         <div class="stat-box"><div class="num" id="statTotalGuru">0</div><div class="label">Total Guru</div></div>
         <div class="stat-box tepat"><div class="num" id="statTepat">0</div><div class="label">Tepat</div></div>
@@ -284,7 +192,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
     </section>
 
-    <!-- REKAP GURU -->
     <section id="rekapView" class="hidden">
       <div class="card">
         <h2>📊 Rekap Guru Bulanan</h2>
@@ -294,7 +201,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
           <button class="btn-sm" onclick="downloadCSV('rekapTable', 'Rekap_Guru')" style="background:var(--neon-cyan); color:#000; border:none;">⬇️ Excel</button>
         </div>
         <input type="text" id="searchRekap" class="search-box" placeholder="🔍 Cari nama guru..." onkeyup="filterTable('searchRekap', 'rekapTable')">
-        
         <div id="rekapTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 15px; border-radius: 8px;">
           <table id="rekapTable">
             <thead><tr><th>Nama Guru</th><th>Kelas</th><th>Tepat</th><th>Telat</th><th>Ijin</th><th>Sakit</th><th>Absen</th><th>Total</th></tr></thead>
@@ -304,14 +210,12 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
     </section>
 
-    <!-- PRESENSI SANTRI -->
     <section id="santriView" class="hidden">
       <div class="date-filter hidden" id="santriDateFilter">
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterSantriDate" onchange="renderSantri()">
         <span style="font-size:11px; color:var(--muted);">(Admin dapat mengedit riwayat)</span>
       </div>
-
       <div class="card hidden" id="santriAdminForm">
         <h2>➕ Tambah Santri (Admin)</h2>
         <div class="form-row">
@@ -320,13 +224,9 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
           <button class="btn-sm" onclick="addSantri()">Tambah</button>
         </div>
       </div>
-      <div class="card">
-        <h2>🎒 Presensi Santri</h2>
-        <div id="santriAttendanceList"></div>
-      </div>
+      <div class="card"><h2>🎒 Presensi Santri</h2><div id="santriAttendanceList"></div></div>
     </section>
 
-    <!-- REKAP SANTRI -->
     <section id="rekapSantriView" class="hidden">
       <div class="card">
         <h2>📊 Rekap Santri Bulanan</h2>
@@ -336,7 +236,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
           <button class="btn-sm" onclick="downloadCSV('rekapSantriTable', 'Rekap_Santri')" style="background:var(--neon-cyan); color:#000; border:none;">⬇️ Excel</button>
         </div>
         <input type="text" id="searchRekapSantri" class="search-box" placeholder="🔍 Cari nama santri..." onkeyup="filterTable('searchRekapSantri', 'rekapSantriTable')">
-        
         <div id="rekapSantriTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 15px; border-radius: 8px;">
           <table id="rekapSantriTable">
             <thead><tr><th>Nama Santri</th><th>Kelas</th><th>Hadir</th><th>Sakit</th><th>Ijin</th><th>Absen</th><th>Total</th></tr></thead>
@@ -346,36 +245,27 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
     </section>
 
-    <!-- DATA GURU -->
     <section id="guruView" class="hidden">
       <div class="card">
         <h2>➕ Tambah Guru</h2>
         <div class="form-row">
           <input type="text" id="newGuruName" placeholder="Nama guru">
           <select id="newGuruClass"><option value="A">Kelas A</option><option value="B">Kelas B</option><option value="C">Kelas C</option></select>
-          <label style="color:var(--text); font-size:13px; display:flex; align-items:center; gap:5px;">
-            <input type="checkbox" id="newGuruWali"> Wali Kelas
-          </label>
+          <label style="color:var(--text); font-size:13px; display:flex; align-items:center; gap:5px;"><input type="checkbox" id="newGuruWali"> Wali Kelas</label>
           <button class="btn-sm" onclick="addTeacher()">Tambah</button>
         </div>
       </div>
       <div class="card"><h2>👥 Daftar Guru</h2><div id="guruList"></div></div>
     </section>
 
-    <!-- DATA AKUN -->
     <section id="memberView" class="hidden">
       <div class="card">
         <h2>➕ Tambah Akun (Admin / Member)</h2>
         <div class="form-row">
           <input type="text" id="newMemberUsername" placeholder="Username">
           <input type="password" id="newMemberPassword" placeholder="Password">
-          <select id="newUserRole">
-            <option value="member">Member (Guru)</option>
-            <option value="admin">Admin Baru</option>
-          </select>
-          <select id="newMemberTeacherId">
-            <option value="">-- Pilih Guru (Jika Member) --</option>
-          </select>
+          <select id="newUserRole"><option value="member">Member (Guru)</option><option value="admin">Admin Baru</option></select>
+          <select id="newMemberTeacherId"><option value="">-- Pilih Guru (Jika Member) --</option></select>
           <button class="btn-sm" onclick="addMember()">Tambah</button>
         </div>
       </div>
@@ -386,7 +276,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
     </section>
 
-    <!-- PROKER -->
     <section id="prokerView" class="hidden">
       <div class="card" id="prokerForm">
         <h2>➕ Tambah Proker</h2>
@@ -403,7 +292,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       <div class="card"><h2>📌 Program Kerja</h2><div id="prokerList"></div></div>
     </section>
 
-    <!-- PENGATURAN ADMIN -->
     <section id="settingView" class="hidden">
       <div class="card">
         <h2>⚙️ Ganti Kredensial Admin</h2>
@@ -424,150 +312,84 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- YT Player untuk Backsound -->
 <div id="yt-player" style="display:none;"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-// ================= TEMA GELAP & TERANG =================
 function toggleTheme() {
-    const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
+    const body = document.body; const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    body.setAttribute('data-theme', newTheme);
-    localStorage.setItem('tpa_theme', newTheme);
+    body.setAttribute('data-theme', newTheme); localStorage.setItem('tpa_theme', newTheme);
     document.getElementById('themeToggle').innerText = newTheme === 'light' ? '☀️' : '🌙';
-    
     if(typeof initCanvas === 'function') initCanvas(); 
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('tpa_theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     document.getElementById('themeToggle').innerText = savedTheme === 'light' ? '☀️' : '🌙';
 });
-
-// ================= MENU GARIS TIGA =================
-function toggleMenu() {
-    const menu = document.getElementById('myMenu');
-    menu.classList.toggle('show');
-}
+function toggleMenu() { document.getElementById('myMenu').classList.toggle('show'); }
 window.onclick = function(event) {
     if (!event.target.matches('.hamburger')) {
         const menu = document.getElementById('myMenu');
-        if (menu.classList.contains('show')) {
-            menu.classList.remove('show');
-        }
+        if (menu.classList.contains('show')) menu.classList.remove('show');
     }
 }
-
-// ================= SUARA TTS =================
 function ucapkanSalam(nama) {
     if ('speechSynthesis' in window) {
         let msg = new SpeechSynthesisUtterance(`Ahlan wa sahlan, ${nama}`);
-        msg.lang = 'id-ID';
-        msg.rate = 0.9;
-        msg.pitch = 1;
-        window.speechSynthesis.speak(msg);
+        msg.lang = 'id-ID'; msg.rate = 0.9; msg.pitch = 1; window.speechSynthesis.speak(msg);
     }
 }
-
-// ================= MUSIK BACKGROUND =================
 let player, isMusicPlaying = false;
 window.onYouTubeIframeAPIReady = function() {
-    player = new YT.Player('yt-player', {
-        height: '0', width: '0',
-        videoId: 'yX59Xsmy_b0', 
-        playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'yX59Xsmy_b0' },
-        events: {
-            'onReady': (event) => { console.log('YT Player siap'); }
-        }
-    });
+    player = new YT.Player('yt-player', { height: '0', width: '0', videoId: 'yX59Xsmy_b0', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'yX59Xsmy_b0' } });
 }
-
 function toggleMusic() {
     const btn = document.getElementById('musicBtn');
     if (!player || typeof player.playVideo !== 'function') return;
-    
-    if (isMusicPlaying) {
-        player.pauseVideo();
-        isMusicPlaying = false;
-        btn.innerHTML = "🎵 Musik";
-    } else {
-        player.playVideo();
-        isMusicPlaying = true;
-        btn.innerHTML = "⏸️ Pause";
-    }
+    if (isMusicPlaying) { player.pauseVideo(); isMusicPlaying = false; btn.innerHTML = "🎵 Musik"; }
+    else { player.playVideo(); isMusicPlaying = true; btn.innerHTML = "⏸️ Pause"; }
 }
-
-// ================= ANIMASI BACKGROUND =================
-let canvas, ctx, width, height, time = 0, coins = [];
-let animationId;
-
+let canvas, ctx, width, height, time = 0, coins = []; let animationId;
 function initCanvas() {
-    canvas = document.getElementById('bg-graph');
-    ctx = canvas.getContext('2d');
-    resize(); 
-    
+    canvas = document.getElementById('bg-graph'); ctx = canvas.getContext('2d'); resize(); 
     coins = [];
-    for (let i = 0; i < 30; i++) { 
-        coins.push({ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speed: 1 + Math.random() * 2, size: 20 + Math.random() * 30, opacity: 0.05 + Math.random() * 0.15 }); 
-    }
-    
-    cancelAnimationFrame(animationId);
-    draw();
+    for (let i = 0; i < 30; i++) coins.push({ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speed: 1 + Math.random() * 2, size: 20 + Math.random() * 30, opacity: 0.05 + Math.random() * 0.15 }); 
+    cancelAnimationFrame(animationId); draw();
 }
-
 function resize() { if(canvas) { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; } }
 window.addEventListener('resize', resize);
-
 function draw() {
-    if(!ctx) return;
-    ctx.clearRect(0, 0, width, height); time += 0.02; 
-    
+    if(!ctx) return; ctx.clearRect(0, 0, width, height); time += 0.02; 
     const style = getComputedStyle(document.body);
-    const col1 = style.getPropertyValue('--canvas-line1').trim();
-    const col2 = style.getPropertyValue('--canvas-line2').trim();
+    const colors = [style.getPropertyValue('--canvas-line1').trim(), style.getPropertyValue('--canvas-line2').trim()];
     const colSymbol = style.getPropertyValue('--canvas-symbol').trim();
-    
-    const colors = [col1, col2];
     for(let j=0; j<2; j++) {
         ctx.beginPath(); ctx.strokeStyle = colors[j] + ' 0.3)'; ctx.lineWidth = 2;
         let points = [];
-        for(let x=0; x <= width; x+=10) {
-            let y = height/2 + Math.sin((x * 0.005) + time + j) * 100 + Math.cos((x * 0.01) + (time * 1.5) + j) * 50;
-            points.push({x: x, y: y});
-        }
+        for(let x=0; x <= width; x+=10) { let y = height/2 + Math.sin((x * 0.005) + time + j) * 100 + Math.cos((x * 0.01) + (time * 1.5) + j) * 50; points.push({x: x, y: y}); }
         points.forEach((p, i) => { if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
         ctx.stroke(); ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.closePath();
         let gradient = ctx.createLinearGradient(0, 0, 0, height);
         gradient.addColorStop(0, colors[j] + ' 0.1)'); gradient.addColorStop(1, colors[j] + ' 0)');
         ctx.fillStyle = gradient; ctx.fill();
     }
-    
     coins.forEach(c => {
         ctx.font = "bold " + c.size + "px Arial"; ctx.fillStyle = `${colSymbol} ${c.opacity})`; 
         ctx.textAlign = "center"; ctx.fillText("☪", c.x, c.y); 
         c.y -= c.speed; if (c.y < -50) { c.y = height + 50; c.x = Math.random() * width; }
     });
-    
     animationId = requestAnimationFrame(draw);
 }
-
 initCanvas();
-
-// ================= SUARA BEEP =================
 function playSound(type) {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
     if (type === 'success') {
-      oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+      oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
       gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
       oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
     } else if (type === 'error') {
@@ -575,26 +397,16 @@ function playSound(type) {
       gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
       oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
     }
-  } catch (e) { console.log('Audio error', e); }
+  } catch (e) {}
 }
-
-// ================= JAM DIGITAL =================
 setInterval(() => {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
-  const clockEl = document.getElementById('liveClock');
-  if (clockEl) clockEl.innerText = timeStr + ' WIB';
+  const now = new Date(); const timeStr = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
+  const clockEl = document.getElementById('liveClock'); if (clockEl) clockEl.innerText = timeStr + ' WIB';
 }, 1000);
-
-// ================= API & LOGIKA UTAMA =================
 const API = {
-  token: localStorage.getItem('token') || '',
-  user: null,
+  token: localStorage.getItem('token') || '', user: null,
   async call(method, path, body) {
-    const res = await fetch('/api' + path, {
-      method, headers: { 'Content-Type': 'application/json', 'Authorization': this.token },
-      body: body ? JSON.stringify(body) : undefined
-    });
+    const res = await fetch('/api' + path, { method, headers: { 'Content-Type': 'application/json', 'Authorization': this.token }, body: body ? JSON.stringify(body) : undefined });
     if (res.status === 401) { this.logout(); throw new Error('Sesi berakhir'); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
@@ -602,60 +414,34 @@ const API = {
   },
   logout() { localStorage.removeItem('token'); this.token = ''; this.user = null; showLogin(); }
 };
-
 const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(msg, isErr) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' error' : ''); clearTimeout(t._t); t._t = setTimeout(() => t.className = 'toast', 3500); }
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showLogin() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('appView').classList.add('hidden'); }
 
-// ================= FITUR GEOLOCATION (50 METER) =================
-const TPA_LAT = -7.823713; 
-const TPA_LON = 110.384600; 
-const MAX_RADIUS_METER = 50; 
-
+const TPA_LAT = -7.823713, TPA_LON = 110.384600, MAX_RADIUS_METER = 50; 
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-  var R = 6371; 
-  var dLat = deg2rad(lat2-lat1);  
-  var dLon = deg2rad(lon2-lon1); 
+  var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
   var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  var d = R * c; 
-  return d * 1000; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); return R * c * 1000; 
 }
 function deg2rad(deg) { return deg * (Math.PI/180); }
-
 function checkLocation(callback) {
-  if (!navigator.geolocation) {
-    toast("Browser Anda tidak mendukung GPS", true);
-    return;
-  }
+  if (!navigator.geolocation) { toast("Browser Anda tidak mendukung GPS", true); return; }
   toast("Mengecek lokasi Anda...", false);
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      const userLat = position.coords.latitude;
-      const userLon = position.coords.longitude;
-      const distance = getDistanceFromLatLonInMeters(TPA_LAT, TPA_LON, userLat, userLon);
-      
-      if (distance <= MAX_RADIUS_METER) {
-        callback(); 
-      } else {
-        playSound('error');
-        toast(`Anda berada di luar area TPA (Jarak: ${Math.round(distance)}m). Presensi ditolak!`, true);
-      }
+      const distance = getDistanceFromLatLonInMeters(TPA_LAT, TPA_LON, position.coords.latitude, position.coords.longitude);
+      if (distance <= MAX_RADIUS_METER) { callback(); } 
+      else { playSound('error'); toast(`Anda berada di luar area TPA (Jarak: ${Math.round(distance)}m). Presensi ditolak!`, true); }
     },
-    (error) => {
-      playSound('error');
-      toast("Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin browser diberikan.", true);
-    },
+    (error) => { playSound('error'); toast("Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin browser diberikan.", true); },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
-
-// ================= FITUR PENCARIAN & CSV =================
 function filterTable(inputId, tableId) {
   const filter = document.getElementById(inputId).value.toLowerCase();
-  const tbody = document.getElementById(tableId).querySelector('tbody');
-  const rows = tbody.querySelectorAll('tr');
+  const rows = document.getElementById(tableId).querySelector('tbody').querySelectorAll('tr');
   rows.forEach(row => { row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none'; });
 }
 function filterDiv(inputId, containerId) {
@@ -664,16 +450,11 @@ function filterDiv(inputId, containerId) {
   items.forEach(item => { item.style.display = item.textContent.toLowerCase().includes(filter) ? '' : 'none'; });
 }
 function downloadCSV(tableId, filename) {
-  playSound('success');
-  const table = document.getElementById(tableId);
-  let csvContent = "";
+  playSound('success'); const table = document.getElementById(tableId); let csvContent = "";
   table.querySelectorAll('tr').forEach(row => {
     if(row.style.display === 'none') return; 
     let rowData = [];
-    row.querySelectorAll('th, td').forEach(col => {
-      let text = col.innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g, ";");
-      rowData.push(`"${text}"`);
-    });
+    row.querySelectorAll('th, td').forEach(col => { let text = col.innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g, ";"); rowData.push(`"${text}"`); });
     csvContent += rowData.join(",") + "\n";
   });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -681,605 +462,245 @@ function downloadCSV(tableId, filename) {
   link.setAttribute("download", `${filename}_${new Date().getTime()}.csv`);
   document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
-
-// ================= DASHBOARD GURU =================
 let dashChart = null;
-
 function renderWelcome(isSuccessAttendance = false) {
-  let name = API.user.name;
-  let welcomeText = "Selamat datang";
-  let suffix = " ☺️🙏";
-  
+  let name = API.user.name; let welcomeText = "Selamat datang"; let suffix = " ☺️🙏";
   if (isSuccessAttendance) welcomeText = "Selamat anda telah presensi hari ini";
   else if (API.user.role === 'member' && !name.toLowerCase().includes('ustadz')) name = "Ustadz/Ustadzah " + name;
   else if (API.user.role === 'admin') name = "Admin";
-  
   if (isSuccessAttendance) document.getElementById('welcomeMsg').innerText = `${welcomeText}${suffix}`;
   else document.getElementById('welcomeMsg').innerText = `${welcomeText}, ${name}${suffix}`;
 }
-
 function showApp() {
-  document.getElementById('loginView').classList.add('hidden');
-  document.getElementById('appView').classList.remove('hidden');
+  document.getElementById('loginView').classList.add('hidden'); document.getElementById('appView').classList.remove('hidden');
   document.getElementById('userRole').textContent = API.user.role === 'admin' ? 'Admin' : 'Member';
-  
-  renderWelcome();
-  ucapkanSalam(API.user.name);
-
+  renderWelcome(); ucapkanSalam(API.user.name);
   const today = todayStr();
   if(API.user.role === 'admin') {
-    document.getElementById('guruDateFilter').classList.remove('hidden');
-    document.getElementById('filterGuruDate').value = today;
-    document.getElementById('santriDateFilter').classList.remove('hidden');
-    document.getElementById('filterSantriDate').value = today;
-    document.getElementById('tabGuru').classList.remove('hidden');
-    document.getElementById('tabMember').classList.remove('hidden');
-    document.getElementById('tabSetting').classList.remove('hidden');
-    document.getElementById('statsGrid').classList.remove('hidden');
-    document.getElementById('chartCard').classList.remove('hidden');
-    document.getElementById('santriAdminForm').classList.remove('hidden');
+    document.getElementById('guruDateFilter').classList.remove('hidden'); document.getElementById('filterGuruDate').value = today;
+    document.getElementById('santriDateFilter').classList.remove('hidden'); document.getElementById('filterSantriDate').value = today;
+    document.getElementById('tabGuru').classList.remove('hidden'); document.getElementById('tabMember').classList.remove('hidden'); document.getElementById('tabSetting').classList.remove('hidden');
+    document.getElementById('statsGrid').classList.remove('hidden'); document.getElementById('chartCard').classList.remove('hidden'); document.getElementById('santriAdminForm').classList.remove('hidden');
   } else {
-    document.getElementById('tabGuru').classList.add('hidden');
-    document.getElementById('tabMember').classList.add('hidden');
-    document.getElementById('tabSetting').classList.add('hidden');
-    document.getElementById('statsGrid').classList.add('hidden');
-    document.getElementById('chartCard').classList.add('hidden');
-    document.getElementById('santriAdminForm').classList.add('hidden');
+    document.getElementById('tabGuru').classList.add('hidden'); document.getElementById('tabMember').classList.add('hidden'); document.getElementById('tabSetting').classList.add('hidden');
+    document.getElementById('statsGrid').classList.add('hidden'); document.getElementById('chartCard').classList.add('hidden'); document.getElementById('santriAdminForm').classList.add('hidden');
   }
   switchTab('dashboard');
 }
 function doLogout() { API.call('POST', '/logout').catch(()=>{}); API.logout(); }
-
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError'); const card = document.getElementById('loginCard');
   err.textContent = ''; btn.disabled = true; btn.textContent = 'Memproses...';
-  
   try {
-    const res = await fetch('/api/login', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value }) 
-    });
-    
+    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value.trim(), password: document.getElementById('password').value }) });
     const data = await res.json();
-    
-    if (!res.ok) {
-        throw new Error(data.error || 'Username atau password salah');
-    }
-    
-    API.token = data.token; 
-    API.user = data.user; 
-    localStorage.setItem('token', data.token);
-    playSound('success'); 
-    showApp();
-    
+    if (!res.ok) throw new Error(data.error || 'Username atau password salah');
+    API.token = data.token; API.user = data.user; localStorage.setItem('token', data.token);
+    playSound('success'); showApp();
   } catch (error) { 
-      playSound('error'); 
-      // Tampilkan Pesan Error
-      err.textContent = error.message; 
-      // Animasi Goyang
-      card.classList.add('shake');
-      setTimeout(() => card.classList.remove('shake'), 500);
-  } finally { 
-      btn.disabled = false; 
-      btn.textContent = 'Login System'; 
-  }
+      playSound('error'); err.textContent = error.message; 
+      card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 500);
+  } finally { btn.disabled = false; btn.textContent = 'Login System'; }
 });
-
-// === MENU TAB ===
 function switchTab(name) {
   ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
   document.getElementById('santriActionBar').classList.add('hidden'); 
-  
   document.querySelectorAll('.menu-dropdown button').forEach(b => b.classList.remove('active'));
   const activeBtn = document.querySelector(`.menu-dropdown button[data-tab="${name}"]`);
   if(activeBtn) activeBtn.classList.add('active');
-
   document.getElementById('myMenu').classList.remove('show');
-  
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'rekap')     renderRekap();
-  if (name === 'santri')    renderSantri();
-  if (name === 'rekapSantri') renderRekapSantri();
-  if (name === 'guru')      renderGuru();
-  if (name === 'member')    renderMember();
-  if (name === 'proker')    renderProker();
-  if (name === 'setting')   renderSetting();
+  if (name === 'dashboard') renderDashboard(); if (name === 'rekap') renderRekap(); if (name === 'santri') renderSantri();
+  if (name === 'rekapSantri') renderRekapSantri(); if (name === 'guru') renderGuru(); if (name === 'member') renderMember();
+  if (name === 'proker') renderProker(); if (name === 'setting') renderSetting();
 }
-
 async function renderDashboard() {
   try {
     const [teachers, attendance] = await Promise.all([API.call('GET', '/teachers'), API.call('GET', '/attendance')]);
-    
     const filterDateInput = document.getElementById('filterGuruDate');
     const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
-    
-    const todayAtt = {};
-    attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.teacherId] = a);
-    
+    const todayAtt = {}; attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.teacherId] = a);
     if (API.user.role === 'admin') {
         const atts = Object.values(todayAtt);
-        const sTepat = atts.filter(s => s.status === 'tepat').length;
-        const sTelat = atts.filter(s => s.status === 'telat').length;
-        const sIjin = atts.filter(s => s.status === 'ijin').length;
-        const sSakit = atts.filter(s => s.status === 'sakit').length;
-        const sTidak = atts.filter(s => s.status === 'tidak').length;
-
-        document.getElementById('statTotalGuru').textContent = teachers.length;
-        document.getElementById('statTepat').textContent = sTepat;
-        document.getElementById('statTelat').textContent = sTelat;
-        document.getElementById('statIjin').textContent = sIjin;
-        document.getElementById('statSakit').textContent = sSakit;
-        document.getElementById('statTidak').textContent = sTidak;
-
-        const ctx = document.getElementById('dashboardChart').getContext('2d');
-        if (dashChart) dashChart.destroy();
-        
-        const isLight = document.body.getAttribute('data-theme') === 'light';
-        const textColor = isLight ? '#333' : '#e0e0e0';
-        const borderColor = isLight ? '#fff' : '#121216';
-
-        dashChart = new Chart(ctx, {
-          type: 'doughnut',
-          data: { labels: ['Tepat', 'Telat', 'Ijin', 'Sakit', 'Absen'], datasets: [{ data: [sTepat, sTelat, sIjin, sSakit, sTidak], backgroundColor: ['rgba(0, 255, 136, 0.8)','rgba(255, 170, 0, 0.8)','rgba(176, 0, 255, 0.8)','rgba(0, 243, 255, 0.8)','rgba(255, 0, 85, 0.8)'], borderColor: borderColor, borderWidth: 2 }] },
-          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11, family: 'Segoe UI'} } } }, cutout: '65%' }
-        });
+        const sTepat = atts.filter(s => s.status === 'tepat').length; const sTelat = atts.filter(s => s.status === 'telat').length;
+        const sIjin = atts.filter(s => s.status === 'ijin').length; const sSakit = atts.filter(s => s.status === 'sakit').length; const sTidak = atts.filter(s => s.status === 'tidak').length;
+        document.getElementById('statTotalGuru').textContent = teachers.length; document.getElementById('statTepat').textContent = sTepat;
+        document.getElementById('statTelat').textContent = sTelat; document.getElementById('statIjin').textContent = sIjin;
+        document.getElementById('statSakit').textContent = sSakit; document.getElementById('statTidak').textContent = sTidak;
+        const ctx = document.getElementById('dashboardChart').getContext('2d'); if (dashChart) dashChart.destroy();
+        const isLight = document.body.getAttribute('data-theme') === 'light'; const textColor = isLight ? '#333' : '#e0e0e0'; const borderColor = isLight ? '#fff' : '#121216';
+        dashChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Tepat', 'Telat', 'Ijin', 'Sakit', 'Absen'], datasets: [{ data: [sTepat, sTelat, sIjin, sSakit, sTidak], backgroundColor: ['rgba(0, 255, 136, 0.8)','rgba(255, 170, 0, 0.8)','rgba(176, 0, 255, 0.8)','rgba(0, 243, 255, 0.8)','rgba(255, 0, 85, 0.8)'], borderColor: borderColor, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11} } } }, cutout: '65%' } });
     }
-
     document.getElementById('todayDate').textContent = `Data Tanggal: ${viewDate}`;
-    const container = document.getElementById('todayAttendance');
-    let html = '';
+    const container = document.getElementById('todayAttendance'); let html = '';
     let displayTeachers = (API.user.role === 'member') ? teachers.filter(t => t.id === API.user.teacherId) : teachers;
-
-    const now = new Date();
-    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-    const isPast1700 = wibTime.getHours() >= 17;
-    const isToday = (viewDate === todayStr());
-
+    const now = new Date(); const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    const isPast1700 = wibTime.getHours() >= 17; const isToday = (viewDate === todayStr());
     ['A','B','C'].forEach(c => {
-      const list = displayTeachers.filter(t => t.class === c);
-      if (!list.length) return;
+      const list = displayTeachers.filter(t => t.class === c); if (!list.length) return;
       html += `<div class="class-section"><div class="class-header" style="color:var(--neon-cyan); font-weight:bold; margin:10px 0;">Kelas ${c}</div>`;
       list.forEach(t => {
-        const record = todayAtt[t.id] || null;
-        const cur = record ? record.status : '';
-        
+        const record = todayAtt[t.id] || null; const cur = record ? record.status : '';
         let buttonsHtml = '';
         if (API.user.role === 'admin') {
-            buttonsHtml = `
-                <button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null, '${viewDate}')">Hadir</button>
-                <button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null, '${viewDate}')">Telat</button>
-                <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button>
-                <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button>
-                <button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null, '${viewDate}')">Absen</button>
-            `;
-        } else if (cur !== '') {
-            buttonsHtml = `<span style="font-size:12px; color:var(--neon-green); font-weight:bold;">✓ Sudah Absen (${cur.toUpperCase()})</span>`;
-        } else if (!isToday) {
-            buttonsHtml = `<span style="font-size:12px; color:#888;">Hanya bisa absen hari ini</span>`;
-        } else if (!isPast1700) {
-            buttonsHtml = `<span style="font-size:12px; color:var(--neon-orange);">Dibuka jam 17:00 WIB</span>`;
-        } else {
-            buttonsHtml = `
-                <button class="att-btn tepat" onclick="memberPresensi('${t.id}','tepat', '${viewDate}')">Hadir</button>
-                <button class="att-btn telat" onclick="memberPresensi('${t.id}','telat', '${viewDate}')">Telat</button>
-                <button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button>
-                <button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button>
-                <button class="att-btn tidak" onclick="memberPresensi('${t.id}','tidak', '${viewDate}')">Absen</button>
-            `;
-        }
-
+            buttonsHtml = `<button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null, '${viewDate}')">Hadir</button><button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null, '${viewDate}')">Telat</button><button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null, '${viewDate}')">Absen</button>`;
+        } else if (cur !== '') { buttonsHtml = `<span style="font-size:12px; color:var(--neon-green); font-weight:bold;">✓ Sudah Absen (${cur.toUpperCase()})</span>`;
+        } else if (!isToday) { buttonsHtml = `<span style="font-size:12px; color:#888;">Hanya bisa absen hari ini</span>`;
+        } else if (!isPast1700) { buttonsHtml = `<span style="font-size:12px; color:var(--neon-orange);">Dibuka jam 17:00 WIB</span>`;
+        } else { buttonsHtml = `<button class="att-btn tepat" onclick="memberPresensi('${t.id}','tepat', '${viewDate}')">Hadir</button><button class="att-btn telat" onclick="memberPresensi('${t.id}','telat', '${viewDate}')">Telat</button><button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak" onclick="memberPresensi('${t.id}','tidak', '${viewDate}')">Absen</button>`; }
         const imgBtn = (record && record.image) ? `<br><a href="${record.image}" target="_blank" style="font-size:11px;color:var(--neon-cyan);font-weight:bold;">Lihat Bukti Foto</a>` : '';
-
-        html += `<div class="teacher-row">
-          <div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c} ${API.user.role === 'admin' ? '✏️(Admin)' : ''}</span></div>
-          <div class="att-buttons">${buttonsHtml}</div>
-          <div class="upload-area hidden" id="upload-${t.id}">
-             <label style="font-size:12px;color:var(--neon-purple);font-weight:bold;">Upload Bukti:</label>
-             <input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}', '${viewDate}')" style="font-size:11px;color:var(--text);width:100%;margin-top:5px;">
-          </div>
-          ${imgBtn}
-          </div>`;
-      });
-      html += `</div>`;
+        html += `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c} ${API.user.role === 'admin' ? '✏️(Admin)' : ''}</span></div><div class="att-buttons">${buttonsHtml}</div><div class="upload-area hidden" id="upload-${t.id}"><label style="font-size:12px;color:var(--neon-purple);font-weight:bold;">Upload Bukti:</label><input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}', '${viewDate}')" style="font-size:11px;color:var(--text);width:100%;margin-top:5px;"></div>${imgBtn}</div>`;
+      }); html += `</div>`;
     });
     container.innerHTML = html || '<div class="empty" style="text-align:center; padding:20px;">Belum ada data.</div>';
   } catch (e) { toast(e.message, true); }
 }
-
-function memberPresensi(teacherId, status, date) {
-    toast("Mengecek lokasi Anda...", false);
-    checkLocation(() => {
-        markAttendance(teacherId, status, null, date);
-    });
-}
-
-function promptImage(teacherId, status, date) {
-  document.getElementById(`upload-${teacherId}`).classList.remove('hidden');
-  toast(`Silakan upload bukti ${status}.`, false);
-}
-
+function memberPresensi(teacherId, status, date) { toast("Mengecek lokasi Anda...", false); checkLocation(() => { markAttendance(teacherId, status, null, date); }); }
+function promptImage(teacherId, status, date) { document.getElementById(`upload-${teacherId}`).classList.remove('hidden'); toast(`Silakan upload bukti ${status}.`, false); }
 function handleImageUpload(event, teacherId, date) {
-  const file = event.target.files[0];
-  if (!file) return;
+  const file = event.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 600;
+      const canvas = document.createElement('canvas'); const MAX_WIDTH = 600;
       canvas.width = MAX_WIDTH; canvas.height = img.height * (MAX_WIDTH / img.width);
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       const base64 = canvas.toDataURL('image/jpeg', 0.7);
-      
-      const isIjin = document.querySelector('.att-btn.ijin').classList.contains('active');
-      const status = isIjin ? 'ijin' : 'sakit';
-      
-      if(API.user.role === 'member') {
-          checkLocation(() => markAttendance(teacherId, status, base64, date));
-      } else {
-          markAttendance(teacherId, status, base64, date);
-      }
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+      const isIjin = document.querySelector('.att-btn.ijin').classList.contains('active'); const status = isIjin ? 'ijin' : 'sakit';
+      if(API.user.role === 'member') checkLocation(() => markAttendance(teacherId, status, base64, date));
+      else markAttendance(teacherId, status, base64, date);
+    }; img.src = e.target.result;
+  }; reader.readAsDataURL(file);
 }
-
 async function markAttendance(teacherId, status, image, date) {
   try { 
-      const res = await API.call('POST', '/attendance', { teacherId, date: date, status, image }); 
+      const res = await API.call('POST', '/attendance', { teacherId, date, status, image }); 
       if(res.status && res.status !== status) { playSound('error'); toast('Waktu melebihi 18:00, tercatat Telat', true); }
       else if (API.user.role === 'member') { renderWelcome(true); playSound('success'); toast('Presensi Berhasil! ☺️🙏', false); }
       else { playSound('success'); toast('Data presensi diperbarui ✓'); }
       renderDashboard(); 
   } catch (e) { playSound('error'); toast(e.message, true); }
 }
-
-// ================= PRESENSI SANTRI =================
 let santriDraft = {};
-
 async function renderSantri() {
   try {
     const [santri, attendance] = await Promise.all([API.call('GET', '/santri'), API.call('GET', '/santri_attendance')]);
-    
     const filterDateInput = document.getElementById('filterSantriDate');
     const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
-
-    const todayAtt = {};
-    attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.santriId] = a);
-
-    const isAdmin = API.user.role === 'admin';
-    document.getElementById('santriAdminForm').classList.toggle('hidden', !isAdmin);
-
-    const container = document.getElementById('santriAttendanceList');
-    let html = '';
-    
+    const todayAtt = {}; attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.santriId] = a);
+    const isAdmin = API.user.role === 'admin'; document.getElementById('santriAdminForm').classList.toggle('hidden', !isAdmin);
+    const container = document.getElementById('santriAttendanceList'); let html = '';
     ['A', 'B', 'C'].forEach(c => {
-      const list = santri.filter(s => s.class === c);
-      if (!list.length) return;
+      const list = santri.filter(s => s.class === c); if (!list.length) return;
       html += `<div class="class-section"><div class="class-header" style="color:var(--neon-cyan); font-weight:bold; margin:10px 0;">Kelas ${c} (Tgl: ${viewDate})</div>`;
       list.forEach(s => {
         const dbRecord = todayAtt[s.id];
         let currentStatus = dbRecord ? dbRecord.status : (santriDraft[s.id] ? santriDraft[s.id].status : '');
         let currentNote = dbRecord ? dbRecord.note : (santriDraft[s.id] ? santriDraft[s.id].note : null);
-        
-        const isLocked = dbRecord && !isAdmin;
-        const disabledStr = isLocked ? 'disabled' : '';
-
-        html += `<div class="teacher-row">
-          <div class="teacher-info">
-            <span class="teacher-name">${esc(s.name)}</span>
-            <span class="teacher-class">Kelas ${c} ${isLocked ? '🔒' : ''}</span>
-            ${currentNote ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(currentNote)}</span>` : ''}
-          </div>
-          <div class="att-buttons">
-            <button class="att-btn tepat ${currentStatus==='hadir'?'active':''}" onclick="setSantriDraft('${s.id}','hadir')" ${disabledStr}>Hadir</button>
-            <button class="att-btn sakit ${currentStatus==='sakit'?'active':''}" onclick="setSantriDraft('${s.id}','sakit')" ${disabledStr}>Sakit</button>
-            <button class="att-btn ijin ${currentStatus==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')" ${disabledStr}>Ijin</button>
-            <button class="att-btn tidak ${currentStatus==='absen'?'active':''}" onclick="setSantriDraft('${s.id}','absen')" ${disabledStr}>Absen</button>
-            ${isAdmin ? `<button class="icon-btn del" onclick="deleteSantri('${s.id}','${esc(s.name)}')">🗑️</button>` : ''}
-          </div>
-        </div>`;
-      });
-      html += `</div>`;
+        const isLocked = dbRecord && !isAdmin; const disabledStr = isLocked ? 'disabled' : '';
+        html += `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(s.name)}</span><span class="teacher-class">Kelas ${c} ${isLocked ? '🔒' : ''}</span>${currentNote ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(currentNote)}</span>` : ''}</div><div class="att-buttons"><button class="att-btn tepat ${currentStatus==='hadir'?'active':''}" onclick="setSantriDraft('${s.id}','hadir')" ${disabledStr}>Hadir</button><button class="att-btn sakit ${currentStatus==='sakit'?'active':''}" onclick="setSantriDraft('${s.id}','sakit')" ${disabledStr}>Sakit</button><button class="att-btn ijin ${currentStatus==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')" ${disabledStr}>Ijin</button><button class="att-btn tidak ${currentStatus==='absen'?'active':''}" onclick="setSantriDraft('${s.id}','absen')" ${disabledStr}>Absen</button>${isAdmin ? `<button class="icon-btn del" onclick="deleteSantri('${s.id}','${esc(s.name)}')">🗑️</button>` : ''}</div></div>`;
+      }); html += `</div>`;
     });
     container.innerHTML = html || '<div class="empty" style="text-align:center; padding:20px;">Belum ada data santri.</div>';
-    
-    if (Object.keys(santriDraft).length > 0 && !isLocked) {
-      document.getElementById('santriActionBar').classList.remove('hidden');
-    } else {
-      document.getElementById('santriActionBar').classList.add('hidden');
-    }
-    
+    if (Object.keys(santriDraft).length > 0 && !isLocked) document.getElementById('santriActionBar').classList.remove('hidden');
+    else document.getElementById('santriActionBar').classList.add('hidden');
   } catch (e) { toast(e.message, true); }
 }
-
-function setSantriDraft(santriId, status, note = null) {
-  playSound('success');
-  santriDraft[santriId] = { status, note: note !== null ? note : (santriDraft[santriId]?.note || null) };
-  renderSantri();
-}
-
-function promptSantriIjin(santriId) {
-  const note = prompt("Masukkan keterangan ijin (bebas):");
-  if (note !== null) {
-    setSantriDraft(santriId, 'ijin', note);
-  }
-}
-
-function cancelSantriDraft() {
-  playSound('error');
-  if(confirm('Batalkan semua perubahan presensi yang belum disimpan?')) {
-    santriDraft = {};
-    renderSantri();
-  }
-}
-
+function setSantriDraft(santriId, status, note = null) { playSound('success'); santriDraft[santriId] = { status, note: note !== null ? note : (santriDraft[santriId]?.note || null) }; renderSantri(); }
+function promptSantriIjin(santriId) { const note = prompt("Masukkan keterangan ijin (bebas):"); if (note !== null) setSantriDraft(santriId, 'ijin', note); }
+function cancelSantriDraft() { playSound('error'); if(confirm('Batalkan semua perubahan presensi yang belum disimpan?')) { santriDraft = {}; renderSantri(); } }
 async function saveSantriDraft() {
-  if (Object.keys(santriDraft).length === 0) return;
-  playSound('success');
-  
+  if (Object.keys(santriDraft).length === 0) return; playSound('success');
   const filterDateInput = document.getElementById('filterSantriDate');
   const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
-
-  const records = Object.keys(santriDraft).map(id => ({
-    santriId: id,
-    status: santriDraft[id].status,
-    note: santriDraft[id].note
-  }));
-
+  const records = Object.keys(santriDraft).map(id => ({ santriId: id, status: santriDraft[id].status, note: santriDraft[id].note }));
   try {
-    const btn = document.querySelector('.btn-save');
-    const oriText = btn.innerText;
-    btn.innerText = 'Menyimpan...';
-    btn.disabled = true;
-
+    const btn = document.querySelector('.btn-save'); const oriText = btn.innerText;
+    btn.innerText = 'Menyimpan...'; btn.disabled = true;
     await API.call('POST', '/santri_attendance/bulk', { date: viewDate, records });
-    
-    santriDraft = {};
-    playSound('success');
-    toast('Presensi santri berhasil disimpan!');
-    renderSantri();
-    
-    btn.innerText = oriText;
-    btn.disabled = false;
-  } catch (e) {
-    playSound('error');
-    alert("Gagal menyimpan: " + e.message);
-    document.querySelector('.btn-save').innerText = 'Simpan Presensi Hari Ini';
-    document.querySelector('.btn-save').disabled = false;
-  }
+    santriDraft = {}; playSound('success'); toast('Presensi santri berhasil disimpan!'); renderSantri();
+    btn.innerText = oriText; btn.disabled = false;
+  } catch (e) { playSound('error'); alert("Gagal menyimpan: " + e.message); document.querySelector('.btn-save').innerText = 'Simpan Presensi Hari Ini'; document.querySelector('.btn-save').disabled = false; }
 }
-
-async function addSantri() {
-  const name = document.getElementById('newSantriName').value.trim();
-  const cls = document.getElementById('newSantriClass').value;
-  if (!name) return toast('Nama wajib diisi', true);
-  try { await API.call('POST', '/santri', { name, class: cls }); document.getElementById('newSantriName').value = ''; playSound('success'); toast('Santri ditambahkan'); renderSantri(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-
-async function deleteSantri(id, name) {
-  if (!confirm(`Hapus santri "${name}"?`)) return;
-  try { await API.call('DELETE', '/santri/' + id); playSound('success'); toast('Santri dihapus'); renderSantri(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-
-// ================= REKAP =================
+async function addSantri() { const name = document.getElementById('newSantriName').value.trim(); const cls = document.getElementById('newSantriClass').value; if (!name) return toast('Nama wajib diisi', true); try { await API.call('POST', '/santri', { name, class: cls }); document.getElementById('newSantriName').value = ''; playSound('success'); toast('Santri ditambahkan'); renderSantri(); } catch (e) { playSound('error'); toast(e.message, true); } }
+async function deleteSantri(id, name) { if (!confirm(`Hapus santri "${name}"?`)) return; try { await API.call('DELETE', '/santri/' + id); playSound('success'); toast('Santri dihapus'); renderSantri(); } catch (e) { playSound('error'); toast(e.message, true); } }
 async function renderRekapSantri() {
-  const input = document.getElementById('rekapSantriMonth');
-  if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  const input = document.getElementById('rekapSantriMonth'); if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
   try {
     const data = await API.call('GET', '/rekap_santri?month=' + input.value);
     const tbody = document.getElementById('rekapSantriBody');
-    tbody.innerHTML = data.map(r => `<tr>
-      <td>${esc(r.name)}</td><td>Kelas ${r.class}</td>
-      <td><span class="badge tepat">${r.hadir}</span></td>
-      <td><span class="badge sakit">${r.sakit}</span></td>
-      <td><span class="badge ijin">${r.ijin}</span></td>
-      <td><span class="badge tidak">${r.absen}</span></td>
-      <td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="7" class="empty" style="text-align:center;">Belum ada data.</td></tr>';
+    tbody.innerHTML = data.map(r => `<tr><td>${esc(r.name)}</td><td>Kelas ${r.class}</td><td><span class="badge tepat">${r.hadir}</span></td><td><span class="badge sakit">${r.sakit}</span></td><td><span class="badge ijin">${r.ijin}</span></td><td><span class="badge tidak">${r.absen}</span></td><td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="7" class="empty" style="text-align:center;">Belum ada data.</td></tr>';
   } catch (e) { toast(e.message, true); }
 }
 document.getElementById('rekapSantriMonth').addEventListener('change', renderRekapSantri);
-
-function downloadPDFSantri() {
-  const element = document.getElementById('rekapSantriTableContainer');
-  const monthInput = document.getElementById('rekapSantriMonth').value;
-  if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
-  playSound('success');
-
+function downloadPDFSantri() { /* Kode PDF sama seperti sebelumnya */
+  const element = document.getElementById('rekapSantriTableContainer'); const monthInput = document.getElementById('rekapSantriMonth').value; if (!monthInput) return toast('Pilih bulan terlebih dahulu', true); playSound('success');
   const opt = { margin: 10, filename: `Rekap_Santri_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-  const originalBg = element.style.background; const originalColor = element.style.color;
-  element.style.background = '#ffffff'; element.style.color = '#000000';
+  const originalBg = element.style.background; const originalColor = element.style.color; element.style.background = '#ffffff'; element.style.color = '#000000';
   const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
   ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); tds.forEach(td => { td.style.color = '#000'; });
-
-  html2pdf().set(opt).from(element).save().then(() => {
-    element.style.background = originalBg; element.style.color = originalColor;
-    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; });
-    playSound('success'); toast('PDF Santri berhasil diunduh');
-  });
+  html2pdf().set(opt).from(element).save().then(() => { element.style.background = originalBg; element.style.color = originalColor; ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; }); playSound('success'); toast('PDF Santri berhasil diunduh'); });
 }
-
 async function renderRekap() {
-  const input = document.getElementById('rekapMonth');
-  if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+  const input = document.getElementById('rekapMonth'); if (!input.value) { const d = new Date(); input.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
   try {
     const data = await API.call('GET', '/rekap?month=' + input.value);
     const tbody = document.getElementById('rekapBody');
-    tbody.innerHTML = data.map(r => `<tr>
-      <td>${esc(r.name)}</td><td>Kelas ${r.class}</td>
-      <td><span class="badge tepat">${r.tepatWaktu}</span></td>
-      <td><span class="badge telat">${r.telat}</span></td>
-      <td><span class="badge ijin">${r.ijin}</span></td>
-      <td><span class="badge sakit">${r.sakit}</span></td>
-      <td><span class="badge tidak">${r.tidakHadir}</span></td>
-      <td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="8" class="empty" style="text-align:center;">Belum ada data.</td></tr>';
+    tbody.innerHTML = data.map(r => `<tr><td>${esc(r.name)}</td><td>Kelas ${r.class}</td><td><span class="badge tepat">${r.tepatWaktu}</span></td><td><span class="badge telat">${r.telat}</span></td><td><span class="badge ijin">${r.ijin}</span></td><td><span class="badge sakit">${r.sakit}</span></td><td><span class="badge tidak">${r.tidakHadir}</span></td><td><strong>${r.total}</strong></td></tr>`).join('') || '<tr><td colspan="8" class="empty" style="text-align:center;">Belum ada data.</td></tr>';
   } catch (e) { toast(e.message, true); }
 }
 document.getElementById('rekapMonth').addEventListener('change', renderRekap);
-
 function downloadPDF() {
-  const element = document.getElementById('rekapTableContainer');
-  const monthInput = document.getElementById('rekapMonth').value;
-  if (!monthInput) return toast('Pilih bulan terlebih dahulu', true);
-  playSound('success');
-
+  const element = document.getElementById('rekapTableContainer'); const monthInput = document.getElementById('rekapMonth').value; if (!monthInput) return toast('Pilih bulan terlebih dahulu', true); playSound('success');
   const opt = { margin: 10, filename: `Rekap_Guru_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
-  const originalBg = element.style.background; const originalColor = element.style.color;
-  element.style.background = '#ffffff'; element.style.color = '#000000';
+  const originalBg = element.style.background; const originalColor = element.style.color; element.style.background = '#ffffff'; element.style.color = '#000000';
   const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
   ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); tds.forEach(td => { td.style.color = '#000'; });
-
-  html2pdf().set(opt).from(element).save().then(() => {
-    element.style.background = originalBg; element.style.color = originalColor;
-    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; });
-    playSound('success'); toast('PDF berhasil diunduh');
-  });
+  html2pdf().set(opt).from(element).save().then(() => { element.style.background = originalBg; element.style.color = originalColor; ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; }); playSound('success'); toast('PDF berhasil diunduh'); });
 }
-
-// ================= DATA GURU & AKUN =================
 async function renderGuru() {
   try {
-    const teachers = await API.call('GET', '/teachers');
-    const list = document.getElementById('guruList');
-    list.innerHTML = teachers.map(t => `<div class="teacher-row">
-        <div class="teacher-info">
-          <span class="teacher-name">${esc(t.name)} ${t.isWaliKelas ? '<span style="color:var(--neon-green);font-size:12px;">⭐ Wali Kelas</span>' : ''}</span>
-          <span class="teacher-class">Kelas ${t.class}</span>
-        </div>
-        <button class="icon-btn del" onclick="deleteTeacher('${t.id}','${esc(t.name)}')">🗑️</button>
-      </div>`).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada guru.</div>';
+    const teachers = await API.call('GET', '/teachers'); const list = document.getElementById('guruList');
+    list.innerHTML = teachers.map(t => `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(t.name)} ${t.isWaliKelas ? '<span style="color:var(--neon-green);font-size:12px;">⭐ Wali Kelas</span>' : ''}</span><span class="teacher-class">Kelas ${t.class}</span></div><button class="icon-btn del" onclick="deleteTeacher('${t.id}','${esc(t.name)}')">🗑️</button></div>`).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada guru.</div>';
   } catch (e) { toast(e.message, true); }
 }
-async function addTeacher() {
-  const name = document.getElementById('newGuruName').value.trim();
-  const cls = document.getElementById('newGuruClass').value;
-  const isWaliKelas = document.getElementById('newGuruWali').checked;
-  if (!name) return toast('Nama wajib diisi', true);
-  try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; playSound('success'); toast('Guru ditambahkan'); renderGuru(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-async function deleteTeacher(id, name) {
-  if (!confirm(`Hapus guru "${name}"?`)) return;
-  try { await API.call('DELETE', '/teachers/' + id); playSound('success'); toast('Guru dihapus'); renderGuru(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-
+async function addTeacher() { const name = document.getElementById('newGuruName').value.trim(); const cls = document.getElementById('newGuruClass').value; const isWaliKelas = document.getElementById('newGuruWali').checked; if (!name) return toast('Nama wajib diisi', true); try { await API.call('POST', '/teachers', { name, class: cls, isWaliKelas }); document.getElementById('newGuruName').value = ''; playSound('success'); toast('Guru ditambahkan'); renderGuru(); } catch (e) { playSound('error'); toast(e.message, true); } }
+async function deleteTeacher(id, name) { if (!confirm(`Hapus guru "${name}"?`)) return; try { await API.call('DELETE', '/teachers/' + id); playSound('success'); toast('Guru dihapus'); renderGuru(); } catch (e) { playSound('error'); toast(e.message, true); } }
 async function renderMember() {
   try {
     const [users, teachers] = await Promise.all([API.call('GET', '/users'), API.call('GET', '/teachers')]);
-    const select = document.getElementById('newMemberTeacherId');
-    select.innerHTML = '<option value="">-- Pilih Guru (Jika Member) --</option>' + teachers.map(t => `<option value="${t.id}">${esc(t.name)} (Kelas ${t.class})</option>`).join('');
-
+    const select = document.getElementById('newMemberTeacherId'); select.innerHTML = '<option value="">-- Pilih Guru (Jika Member) --</option>' + teachers.map(t => `<option value="${t.id}">${esc(t.name)} (Kelas ${t.class})</option>`).join('');
     const list = document.getElementById('memberList');
-    list.innerHTML = users.map(u => {
-        const tName = u.teacherId ? (teachers.find(t => t.id === u.teacherId)?.name || '?') : 'Tidak terikat guru';
-        return `<div class="teacher-row">
-            <div class="teacher-info">
-              <span class="teacher-name">${esc(u.username)} <span class="badge ${u.role === 'admin' ? 'terlaksana' : 'ijin'}">${u.role.toUpperCase()}</span></span>
-              <span class="teacher-class">Nama: ${esc(u.name)} | Guru: ${esc(tName)}</span>
-            </div>
-            <button class="icon-btn del" onclick="deleteMember('${u.id}','${esc(u.username)}')">🗑️</button>
-        </div>`;
-    }).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada akun.</div>';
+    list.innerHTML = users.map(u => { const tName = u.teacherId ? (teachers.find(t => t.id === u.teacherId)?.name || '?') : 'Tidak terikat guru'; return `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(u.username)} <span class="badge ${u.role === 'admin' ? 'terlaksana' : 'ijin'}">${u.role.toUpperCase()}</span></span><span class="teacher-class">Nama: ${esc(u.name)} | Guru: ${esc(tName)}</span></div><button class="icon-btn del" onclick="deleteMember('${u.id}','${esc(u.username)}')">🗑️</button></div>`; }).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada akun.</div>';
   } catch (e) { toast(e.message, true); }
 }
 async function addMember() {
-  const username = document.getElementById('newMemberUsername').value.trim();
-  const password = document.getElementById('newMemberPassword').value;
-  const role = document.getElementById('newUserRole').value;
-  const teacherId = document.getElementById('newMemberTeacherId').value;
-  
-  if (!username || !password) return toast('Username & Password wajib', true);
-  if (role === 'member' && !teacherId) return toast('Member harus di-link ke Guru', true);
-
-  let finalName = 'Admin Baru';
-  if (role === 'member') {
-    const teachers = await API.call('GET', '/teachers');
-    finalName = teachers.find(t => t.id === teacherId)?.name || 'Member';
-  }
-
-  try { 
-      await API.call('POST', '/users', { username, password, name: finalName, teacherId: role === 'member' ? teacherId : null, role }); 
-      document.getElementById('newMemberUsername').value = ''; document.getElementById('newMemberPassword').value = '';
-      playSound('success'); toast('Akun berhasil dibuat'); renderMember(); 
-  } catch (e) { playSound('error'); toast(e.message, true); }
+  const username = document.getElementById('newMemberUsername').value.trim(); const password = document.getElementById('newMemberPassword').value;
+  const role = document.getElementById('newUserRole').value; const teacherId = document.getElementById('newMemberTeacherId').value;
+  if (!username || !password) return toast('Username & Password wajib', true); if (role === 'member' && !teacherId) return toast('Member harus di-link ke Guru', true);
+  let finalName = 'Admin Baru'; if (role === 'member') { const teachers = await API.call('GET', '/teachers'); finalName = teachers.find(t => t.id === teacherId)?.name || 'Member'; }
+  try { await API.call('POST', '/users', { username, password, name: finalName, teacherId: role === 'member' ? teacherId : null, role }); document.getElementById('newMemberUsername').value = ''; document.getElementById('newMemberPassword').value = ''; playSound('success'); toast('Akun berhasil dibuat'); renderMember(); } catch (e) { playSound('error'); toast(e.message, true); }
 }
-async function deleteMember(id, username) {
-  if (!confirm(`Hapus akun "${username}"?`)) return;
-  try { await API.call('DELETE', '/users/' + id); playSound('success'); toast('Akun dihapus'); renderMember(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-
-// ================= PROKER =================
+async function deleteMember(id, username) { if (!confirm(`Hapus akun "${username}"?`)) return; try { await API.call('DELETE', '/users/' + id); playSound('success'); toast('Akun dihapus'); renderMember(); } catch (e) { playSound('error'); toast(e.message, true); } }
 async function renderProker() {
   try {
-    const proker = await API.call('GET', '/proker');
-    const isAdmin = API.user.role === 'admin';
-    const list = document.getElementById('prokerList');
-    
-    list.innerHTML = proker.map(p => `<div class="proker-item" style="padding:15px;">
-      <div class="proker-info">
-        <div class="proker-name" style="font-size:15px;">${esc(p.name)}</div>
-        <div class="proker-date" style="color:var(--muted); margin-top:5px;">${p.day ? p.day + ', ' : ''}${p.date ? new Date(p.date).toLocaleDateString('id-ID') : 'Tanpa Tanggal'} 
-        ${p.creator ? `<br><span style="color:var(--muted); font-size:11px;">Oleh: ${esc(p.creator)}</span>` : ''}</div>
-      </div>
-      <span class="badge ${p.status === 'terlaksana' ? 'terlaksana' : 'belum'}">${p.status === 'terlaksana' ? '✓ Terlaksana' : '✗ Belum'}</span>
-      ${isAdmin ? `<div class="proker-actions">
-        <button class="icon-btn edit" title="Ubah status" onclick="toggleProker('${p.id}','${p.status}')">🔄</button>
-        <button class="icon-btn del" title="Hapus" onclick="deleteProker('${p.id}','${esc(p.name)}')">🗑️</button>
-      </div>` : ''}</div>`).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada proker.</div>';
+    const proker = await API.call('GET', '/proker'); const isAdmin = API.user.role === 'admin'; const list = document.getElementById('prokerList');
+    list.innerHTML = proker.map(p => `<div class="proker-item" style="padding:15px;"><div class="proker-info"><div class="proker-name" style="font-size:15px;">${esc(p.name)}</div><div class="proker-date" style="color:var(--muted); margin-top:5px;">${p.day ? p.day + ', ' : ''}${p.date ? new Date(p.date).toLocaleDateString('id-ID') : 'Tanpa Tanggal'} ${p.creator ? `<br><span style="color:var(--muted); font-size:11px;">Oleh: ${esc(p.creator)}</span>` : ''}</div></div><span class="badge ${p.status === 'terlaksana' ? 'terlaksana' : 'belum'}">${p.status === 'terlaksana' ? '✓ Terlaksana' : '✗ Belum'}</span>${isAdmin ? `<div class="proker-actions"><button class="icon-btn edit" title="Ubah status" onclick="toggleProker('${p.id}','${p.status}')">🔄</button><button class="icon-btn del" title="Hapus" onclick="deleteProker('${p.id}','${esc(p.name)}')">🗑️</button></div>` : ''}</div>`).join('') || '<div class="empty" style="text-align:center; padding:20px;">Belum ada proker.</div>';
   } catch (e) { toast(e.message, true); }
 }
 async function addProker() {
-  const name = document.getElementById('newProkerName').value.trim();
-  const status = document.getElementById('newProkerStatus').value;
-  const day = document.getElementById('newProkerDay').value.trim();
-  const date = document.getElementById('newProkerDate').value;
-  if (!name) return toast('Nama proker wajib diisi', true);
-  try { 
-      await API.call('POST', '/proker', { name, status, day, date }); 
-      document.getElementById('newProkerName').value = ''; document.getElementById('newProkerDay').value = ''; document.getElementById('newProkerDate').value = '';
-      playSound('success'); toast('Proker ditambahkan'); renderProker(); 
-  } catch (e) { playSound('error'); toast(e.message, true); }
+  const name = document.getElementById('newProkerName').value.trim(); const status = document.getElementById('newProkerStatus').value; const day = document.getElementById('newProkerDay').value.trim(); const date = document.getElementById('newProkerDate').value; if (!name) return toast('Nama proker wajib diisi', true);
+  try { await API.call('POST', '/proker', { name, status, day, date }); document.getElementById('newProkerName').value = ''; document.getElementById('newProkerDay').value = ''; document.getElementById('newProkerDate').value = ''; playSound('success'); toast('Proker ditambahkan'); renderProker(); } catch (e) { playSound('error'); toast(e.message, true); }
 }
-async function toggleProker(id, cur) {
-  const next = cur === 'terlaksana' ? 'tidak' : 'terlaksana';
-  try { await API.call('PUT', '/proker/' + id, { status: next }); playSound('success'); toast('Status diubah'); renderProker(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-async function deleteProker(id, name) {
-  if (!confirm(`Hapus proker "${name}"?`)) return;
-  try { await API.call('DELETE', '/proker/' + id); playSound('success'); toast('Proker dihapus'); renderProker(); }
-  catch (e) { playSound('error'); toast(e.message, true); }
-}
-
-// ================= PENGATURAN =================
-function renderSetting() {
-  document.getElementById('setUsername').value = '';
-  document.getElementById('setPassword').value = '';
-}
+async function toggleProker(id, cur) { const next = cur === 'terlaksana' ? 'tidak' : 'terlaksana'; try { await API.call('PUT', '/proker/' + id, { status: next }); playSound('success'); toast('Status diubah'); renderProker(); } catch (e) { playSound('error'); toast(e.message, true); } }
+async function deleteProker(id, name) { if (!confirm(`Hapus proker "${name}"?`)) return; try { await API.call('DELETE', '/proker/' + id); playSound('success'); toast('Proker dihapus'); renderProker(); } catch (e) { playSound('error'); toast(e.message, true); } }
+function renderSetting() { document.getElementById('setUsername').value = ''; document.getElementById('setPassword').value = ''; }
 async function changeCredentials() {
-  const newUsername = document.getElementById('setUsername').value.trim();
-  const newPassword = document.getElementById('setPassword').value;
-  if (!newUsername && !newPassword) return toast('Isi salah satu kolom', true);
-  try {
-    await API.call('PUT', '/admin/credentials', { newUsername, newPassword });
-    playSound('success'); toast('Kredensial berhasil diubah');
-    if (newUsername) API.user.username = newUsername;
-    renderSetting();
-  } catch (e) { playSound('error'); toast(e.message, true); }
+  const newUsername = document.getElementById('setUsername').value.trim(); const newPassword = document.getElementById('setPassword').value; if (!newUsername && !newPassword) return toast('Isi salah satu kolom', true);
+  try { await API.call('PUT', '/admin/credentials', { newUsername, newPassword }); playSound('success'); toast('Kredensial berhasil diubah'); if (newUsername) API.user.username = newUsername; renderSetting(); } catch (e) { playSound('error'); toast(e.message, true); }
 }
-
-(async () => {
-  if (API.token) { try { API.user = await API.call('GET', '/me'); showApp(); return; } catch (e) {} }
-  showLogin();
-})();
+(async () => { if (API.token) { try { API.user = await API.call('GET', '/me'); showApp(); return; } catch (e) {} } showLogin(); })();
 </script>
 </body>
 </html>
