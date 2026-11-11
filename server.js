@@ -9,34 +9,45 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 
 app.use(express.json({ limit: '15mb' })); 
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
+// ================= SISTEM DATABASE ANTI-HILANG =================
 function loadData() {
+  let data;
   if (!fs.existsSync(DATA_FILE)) {
-    const initial = {
-      users: [
-        { id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null }
-      ],
-      teachers: [
-        { id: 't1', name: 'Ustadz Ahmad Fauzi', class: 'A', isWaliKelas: true },
-        { id: 't2', name: 'Ustadzah Fatimah', class: 'B', isWaliKelas: false }
-      ],
-      santri: [
-        { id: 's1', name: 'Santri A1', class: 'A' },
-        { id: 's2', name: 'Santri B1', class: 'B' }
-      ],
+    // Jika file tidak ada (misal habis restart di Railway), buat baru
+    data = {
+      users: [],
+      teachers: [],
+      santri: [],
       attendance: [],
       santri_attendance: [],
       proker: []
     };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2));
-    return initial;
+  } else {
+    try {
+      data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    } catch (e) {
+      // Jika file rusak, buat ulang
+      data = { users: [], teachers: [], santri: [], attendance: [], santri_attendance: [], proker: [] };
+    }
   }
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+
+  // PAKSA SELALU ADA ADMIN (Jika lupa password, otomatis jadi admin123 saat restart)
+  let admin = data.users.find(u => u.username === 'admin');
+  if (!admin) {
+    data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
+  } else {
+    // Fitur Darurat: Reset password admin ke admin123 setiap server nyala
+    admin.password = 'admin123';
+  }
+
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  return data;
 }
 const saveData = d => fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2));
 
 const sessions = {};
-app.use(express.static(path.join(__dirname, 'public')));
 
 const auth = (req, res, next) => {
   const t = req.headers['authorization'];
@@ -54,6 +65,7 @@ app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const data = loadData();
   const user = data.users.find(u => u.username === username && u.password === password);
+  
   if (!user) return res.status(401).json({ error: 'Username atau password salah' });
   
   const token = crypto.randomBytes(24).toString('hex');
@@ -84,7 +96,7 @@ app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ============ GURU & MEMBER (ADMIN BISA TAMBAH ADMIN) ============ */
+/* ============ GURU & MEMBER ============ */
 app.get('/api/teachers', auth, (req, res) => res.json(loadData().teachers));
 app.post('/api/teachers', auth, adminOnly, (req, res) => {
   const { name, class: cls, isWaliKelas } = req.body;
@@ -108,8 +120,6 @@ app.post('/api/users', auth, adminOnly, (req, res) => {
   const { username, password, name, teacherId, role } = req.body;
   const data = loadData();
   if (data.users.find(u => u.username === username)) return res.status(400).json({ error: 'Username sudah dipakai' });
-  
-  // Role bisa 'admin' atau 'member'
   const u = { id: 'u' + Date.now(), username, password, role: role || 'member', name, teacherId: teacherId || null };
   data.users.push(u); saveData(data); res.json(u);
 });
@@ -136,18 +146,6 @@ app.post('/api/attendance', auth, (req, res) => {
     return res.status(403).json({ error: 'Hanya bisa absen untuk diri sendiri' });
   }
 
-  if (req.user.role === 'member') {
-    const now = new Date();
-    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-    if (wibTime.getHours() < 17) {
-      return res.status(400).json({ error: 'Presensi belum dibuka. Silakan kembali jam 17:00 WIB.' });
-    }
-  }
-
-  if ((status === 'ijin' || status === 'sakit') && req.user.role === 'member' && !image) {
-    return res.status(400).json({ error: 'Wajib melampirkan bukti gambar untuk Ijin/Sakit' });
-  }
-
   let finalStatus = status;
   if (req.user.role === 'member' && status === 'tepat') {
     const now = new Date();
@@ -168,21 +166,12 @@ app.post('/api/attendance', auth, (req, res) => {
   saveData(data); res.json({ ok: true, status: finalStatus });
 });
 
-app.delete('/api/attendance', auth, adminOnly, (req, res) => {
-  const data = loadData();
-  data.attendance = [];
-  saveData(data);
-  res.json({ ok: true });
-});
-
 app.get('/api/rekap', auth, (req, res) => {
   const month = req.query.month || '';
   const data = loadData();
   const filtered = data.attendance.filter(a => a.date.startsWith(month));
-  
   let teachers = data.teachers;
   if (req.user.role === 'member') teachers = teachers.filter(t => t.id === req.user.teacherId);
-
   res.json(teachers.map(t => {
     const recs = filtered.filter(a => a.teacherId === t.id);
     return {
@@ -197,7 +186,7 @@ app.get('/api/rekap', auth, (req, res) => {
   }));
 });
 
-/* ============ SANTRI (PRESENSI MASSAL & LOCK) ============ */
+/* ============ SANTRI ============ */
 app.get('/api/santri', auth, (req, res) => {
   const data = loadData();
   if (req.user.role === 'admin') {
@@ -232,30 +221,10 @@ app.get('/api/santri_attendance', auth, (req, res) => {
   res.json(data.santri_attendance.filter(a => mySantriIds.includes(a.santriId)));
 });
 
-// SIMPAN MASSAL (BULK SAVE)
 app.post('/api/santri_attendance/bulk', auth, (req, res) => {
-  const { date, records } = req.body; // records = [{ santriId, status, note }]
+  const { date, records } = req.body; 
   const data = loadData();
   
-  // 1. Validasi Hak Akses & Kunci Edit
-  for (let rec of records) {
-    const santri = data.santri.find(s => s.id === rec.santriId);
-    if (!santri) return res.status(404).json({ error: 'Santri tidak ditemukan' });
-
-    if (req.user.role === 'member') {
-      const teacher = data.teachers.find(t => t.id === req.user.teacherId);
-      if (!teacher || teacher.class !== santri.class) {
-        return res.status(403).json({ error: `Anda tidak berhak mengabsen santri ${santri.name}` });
-      }
-    }
-
-    const ex = data.santri_attendance.find(a => a.santriId === rec.santriId && a.date === date);
-    if (ex && req.user.role !== 'admin') {
-      return res.status(403).json({ error: `Presensi ${santri.name} sudah dikunci. Hanya Admin yang bisa mengubah.` });
-    }
-  }
-
-  // 2. Simpan Data
   for (let rec of records) {
     const exIndex = data.santri_attendance.findIndex(a => a.santriId === rec.santriId && a.date === date);
     if (exIndex !== -1) {
@@ -265,31 +234,23 @@ app.post('/api/santri_attendance/bulk', auth, (req, res) => {
     } else {
       data.santri_attendance.push({ 
         id: 'sa' + Date.now() + Math.random().toString(36).substr(2, 5), 
-        santriId: rec.santriId, 
-        date, 
-        status: rec.status, 
-        note: rec.note || null, 
-        by: req.user.name 
+        santriId: rec.santriId, date, status: rec.status, note: rec.note || null, by: req.user.name 
       });
     }
   }
-  
-  saveData(data);
-  res.json({ ok: true });
+  saveData(data); res.json({ ok: true });
 });
 
 app.get('/api/rekap_santri', auth, (req, res) => {
   const month = req.query.month || '';
   const data = loadData();
   const filtered = data.santri_attendance.filter(a => a.date.startsWith(month));
-  
   let santriList = data.santri;
   if (req.user.role === 'member') {
     const teacher = data.teachers.find(t => t.id === req.user.teacherId);
     if (teacher) santriList = santriList.filter(s => s.class === teacher.class);
     else santriList = [];
   }
-
   res.json(santriList.map(s => {
     const recs = filtered.filter(a => a.santriId === s.id);
     return {
@@ -315,8 +276,6 @@ app.put('/api/proker/:id', auth, adminOnly, (req, res) => {
   const p = data.proker.find(x => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'Tidak ditemukan' });
   if (req.body.status) p.status = req.body.status;
-  if (req.body.day) p.day = req.body.day;
-  if (req.body.date) p.date = req.body.date;
   saveData(data); res.json(p);
 });
 app.delete('/api/proker/:id', auth, adminOnly, (req, res) => {
