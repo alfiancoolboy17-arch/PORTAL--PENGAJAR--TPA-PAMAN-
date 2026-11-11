@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portal Presensi TPA PAMAN</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
 :root { --bg: #080b18; --card-bg: #11182b; --line: #243454; --neon-cyan: #42e8ff; --neon-green: #00ff88; --neon-red: #ff0055; --neon-orange: #ffaa00; --neon-purple: #b000ff; --text: #eaf3ff; --muted: #9aabc5; --header-bg: rgba(17,24,43,0.9); --canvas-line1: 'rgba(66, 232, 255,'; --canvas-line2: 'rgba(255, 79, 216,'; --canvas-symbol: 'rgba(66, 232, 255,'; }
@@ -316,7 +314,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         </div>
       </div>
     </section>
-
   </main>
 
   <div id="santriActionBar" class="action-bar hidden">
@@ -326,6 +323,10 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- LIBRARY DIPINDAHKAN KE BAWAH AGAR TIDAK MEMBLOKIR TAMPILAN AWAL -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <div id="yt-player" style="display:none;"></div>
 <script src="https://www.youtube.com/iframe_api"></script>
 
@@ -357,7 +358,11 @@ async function handleLogin(e) {
         if (!res.ok) throw new Error(data.error || 'Login gagal');
         
         localStorage.setItem('token', data.token);
-        window.location.reload(); // Refresh agar dashboard dimuat
+        API.token = data.token;
+        API.user = data.user;
+        
+        // Langsung tampilkan app tanpa reload halaman
+        showApp();
         
     } catch (error) {
         playSound('error');
@@ -403,18 +408,26 @@ function ucapkanSalam(nama) {
 // ==========================================
 let player, isMusicPlaying = false;
 window.onYouTubeIframeAPIReady = function() {
-    player = new YT.Player('yt-player', { height: '0', width: '0', videoId: 'yX59Xsmy_b0', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'yX59Xsmy_b0' } });
+    if (typeof YT !== 'undefined' && YT.Player) {
+        player = new YT.Player('yt-player', { height: '0', width: '0', videoId: 'yX59Xsmy_b0', playerVars: { 'autoplay': 0, 'loop': 1, 'playlist': 'yX59Xsmy_b0' } });
+    }
 }
 function toggleMusic() {
     const btn = document.getElementById('musicBtn');
-    if (!player || typeof player.playVideo !== 'function') return;
+    if (!player || typeof player.playVideo !== 'function') {
+        toast("Musik sedang dimuat, coba lagi...", false);
+        return;
+    }
     if (isMusicPlaying) { player.pauseVideo(); isMusicPlaying = false; btn.innerHTML = "🎵 Musik"; }
     else { player.playVideo(); isMusicPlaying = true; btn.innerHTML = "⏸️ Pause"; }
 }
 
 let canvas, ctx, width, height, time = 0, coins = []; let animationId;
 function initCanvas() {
-    canvas = document.getElementById('bg-graph'); ctx = canvas.getContext('2d'); resize(); 
+    canvas = document.getElementById('bg-graph'); 
+    if (!canvas) return;
+    ctx = canvas.getContext('2d'); 
+    resize(); 
     coins = [];
     for (let i = 0; i < 30; i++) coins.push({ x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speed: 1 + Math.random() * 2, size: 20 + Math.random() * 30, opacity: 0.05 + Math.random() * 0.15 }); 
     cancelAnimationFrame(animationId); draw();
@@ -422,7 +435,8 @@ function initCanvas() {
 function resize() { if(canvas) { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; } }
 window.addEventListener('resize', resize);
 function draw() {
-    if(!ctx) return; ctx.clearRect(0, 0, width, height); time += 0.02; 
+    if(!ctx) return; 
+    ctx.clearRect(0, 0, width, height); time += 0.02; 
     const style = getComputedStyle(document.body);
     const colors = [style.getPropertyValue('--canvas-line1').trim(), style.getPropertyValue('--canvas-line2').trim()];
     const colSymbol = style.getPropertyValue('--canvas-symbol').trim();
@@ -443,7 +457,8 @@ function draw() {
     });
     animationId = requestAnimationFrame(draw);
 }
-initCanvas();
+// Jalankan canvas
+setTimeout(initCanvas, 100);
 
 function playSound(type) {
   try {
@@ -573,6 +588,7 @@ async function renderDashboard() {
     const filterDateInput = document.getElementById('filterGuruDate');
     const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
     const todayAtt = {}; attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.teacherId] = a);
+    
     if (API.user.role === 'admin') {
         const atts = Object.values(todayAtt);
         const sTepat = atts.filter(s => s.status === 'tepat').length; const sTelat = atts.filter(s => s.status === 'telat').length;
@@ -581,13 +597,17 @@ async function renderDashboard() {
         document.getElementById('statTelat').textContent = sTelat; document.getElementById('statIjin').textContent = sIjin;
         document.getElementById('statSakit').textContent = sSakit; document.getElementById('statTidak').textContent = sTidak;
         
-        const canvasEl = document.getElementById('dashboardChart');
-        if (canvasEl) {
-            const ctx = canvasEl.getContext('2d'); if (dashChart) dashChart.destroy();
-            const isLight = document.body.getAttribute('data-theme') === 'light'; const textColor = isLight ? '#333' : '#e0e0e0'; const borderColor = isLight ? '#fff' : '#121216';
-            dashChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Tepat', 'Telat', 'Ijin', 'Sakit', 'Absen'], datasets: [{ data: [sTepat, sTelat, sIjin, sSakit, sTidak], backgroundColor: ['rgba(0, 255, 136, 0.8)','rgba(255, 170, 0, 0.8)','rgba(176, 0, 255, 0.8)','rgba(0, 243, 255, 0.8)','rgba(255, 0, 85, 0.8)'], borderColor: borderColor, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11} } } }, cutout: '65%' } });
+        // PENGAMAN CHART.JS
+        if (typeof Chart !== 'undefined') {
+            const canvasEl = document.getElementById('dashboardChart');
+            if (canvasEl) {
+                const ctx = canvasEl.getContext('2d'); if (dashChart) dashChart.destroy();
+                const isLight = document.body.getAttribute('data-theme') === 'light'; const textColor = isLight ? '#333' : '#e0e0e0'; const borderColor = isLight ? '#fff' : '#121216';
+                dashChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Tepat', 'Telat', 'Ijin', 'Sakit', 'Absen'], datasets: [{ data: [sTepat, sTelat, sIjin, sSakit, sTidak], backgroundColor: ['rgba(0, 255, 136, 0.8)','rgba(255, 170, 0, 0.8)','rgba(176, 0, 255, 0.8)','rgba(0, 243, 255, 0.8)','rgba(255, 0, 85, 0.8)'], borderColor: borderColor, borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11} } } }, cutout: '65%' } });
+            }
         }
     }
+    
     document.getElementById('todayDate').textContent = `Data Tanggal: ${viewDate}`;
     const container = document.getElementById('todayAttendance'); let html = '';
     let displayTeachers = (API.user.role === 'member') ? teachers.filter(t => t.id === API.user.teacherId) : teachers;
@@ -695,6 +715,7 @@ async function renderRekapSantri() {
 }
 document.getElementById('rekapSantriMonth').addEventListener('change', renderRekapSantri);
 function downloadPDFSantri() { 
+  if (typeof html2pdf === 'undefined') return toast('Library PDF belum siap, tunggu sebentar...', true);
   const element = document.getElementById('rekapSantriTableContainer'); const monthInput = document.getElementById('rekapSantriMonth').value; if (!monthInput) return toast('Pilih bulan terlebih dahulu', true); playSound('success');
   const opt = { margin: 10, filename: `Rekap_Santri_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
   const originalBg = element.style.background; const originalColor = element.style.color; element.style.background = '#ffffff'; element.style.color = '#000000';
@@ -713,6 +734,7 @@ async function renderRekap() {
 }
 document.getElementById('rekapMonth').addEventListener('change', renderRekap);
 function downloadPDF() {
+  if (typeof html2pdf === 'undefined') return toast('Library PDF belum siap, tunggu sebentar...', true);
   const element = document.getElementById('rekapTableContainer'); const monthInput = document.getElementById('rekapMonth').value; if (!monthInput) return toast('Pilih bulan terlebih dahulu', true); playSound('success');
   const opt = { margin: 10, filename: `Rekap_Guru_${monthInput}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } };
   const originalBg = element.style.background; const originalColor = element.style.color; element.style.background = '#ffffff'; element.style.color = '#000000';
