@@ -161,7 +161,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     <div class="card" style="text-align: center; padding: 40px 30px; max-width: 350px; width: 90%; border-color: var(--neon-red); animation: popIn 0.3s ease-out;">
         <h1 style="color: var(--neon-red); font-size: 26px; margin-bottom: 20px; font-weight: 800; text-shadow: 0 0 10px rgba(255,0,85,0.5);">❌ AKSES DITUTUP</h1>
         <p style="color: var(--text); font-size: 16px; margin-bottom: 10px;">Jam Presensi:</p>
-        <h2 style="color: var(--neon-cyan); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(66,232,255,0.5); letter-spacing: 2px;">17:00 - 18:20 WIB</h2>
+        <h2 style="color: var(--neon-cyan); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(66,232,255,0.5); letter-spacing: 2px;">17:00 - 18:30 WIB</h2>
         <button class="btn btn-primary" onclick="document.getElementById('accessDeniedModal').classList.add('hidden')" style="margin-top: 25px;">Tutup</button>
     </div>
 </div>
@@ -498,7 +498,7 @@ function toast(msg, isErr) { const t = document.getElementById('toast'); t.textC
 function todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showLogin() { document.getElementById('loginView').classList.remove('hidden'); document.getElementById('appView').classList.add('hidden'); }
 
-const TPA_LAT = -7.823713, TPA_LON = 110.384600, MAX_RADIUS_METER = 50; 
+const TPA_LAT = -7.823713, TPA_LON = 110.384600, MAX_RADIUS_METER = 30; 
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
   var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
