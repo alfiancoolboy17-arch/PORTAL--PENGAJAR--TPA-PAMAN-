@@ -150,6 +150,14 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       <button type="submit" class="btn btn-primary" id="loginBtn">Login System</button>
       <div class="error-msg" id="loginError"></div>
     </form>
+
+    <!-- FITUR KUNCI WAKTU -->
+    <div id="timeLockMsg" class="hidden" style="margin-top: 20px; text-align: center; padding: 20px; background: rgba(255, 0, 85, 0.1); border: 1px dashed var(--neon-red); border-radius: 10px;">
+        <h2 style="color: var(--neon-red); margin-bottom: 10px; font-size: 18px;">⏰ AKSES DITUTUP</h2>
+        <p style="color: var(--text); margin-bottom: 10px; font-size: 14px;">Halaman presensi hanya dapat diakses pada:</p>
+        <h3 style="color: var(--neon-cyan); margin: 10px 0; font-size: 20px;">17:00 - 18:20 WIB</h3>
+        <p style="color: var(--muted); font-size: 12px;">Waktu Anda sekarang: <b id="currentWibTime"></b></p>
+    </div>
   </div>
 </div>
 
@@ -291,7 +299,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         <h2>➕ Tambah Proker</h2>
         <div class="form-row">
           <input type="text" id="newProkerName" placeholder="Nama program kerja">
-          <select id="newProkerStatus"><option value="terlaksana">Terlaksana</option><option value="tidak">Belum</option></select>
+          <select id="newProkerStatus"><option value="terlaksana">Terlaksana</option><option value="belum">Belum</option></select>
         </div>
         <div class="form-row">
           <input type="text" id="newProkerDay" placeholder="Hari (contoh: Minggu)">
@@ -328,6 +336,45 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+// ================= FITUR KUNCI WAKTU (TIME LOCK) =================
+function checkTimeLock() {
+    const now = new Date();
+    const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    const h = wibTime.getHours();
+    const m = wibTime.getMinutes();
+    const timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} WIB`;
+
+    const currentTotalMinutes = (h * 60) + m;
+    const startTime = 17 * 60;      // 17:00
+    const endTime = 18 * 60 + 20;   // 18:20
+
+    const formLogin = document.getElementById('loginForm');
+    const timeLockMsg = document.getElementById('timeLockMsg');
+    const currentWibTime = document.getElementById('currentWibTime');
+
+    if (currentTotalMinutes >= startTime && currentTotalMinutes <= endTime) {
+        formLogin.classList.remove('hidden');
+        timeLockMsg.classList.add('hidden');
+    } else {
+        formLogin.classList.add('hidden');
+        timeLockMsg.classList.remove('hidden');
+        if(currentWibTime) currentWibTime.innerText = timeStr;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('tpa_theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeToggle').innerText = savedTheme === 'light' ? '☀️' : '🌙';
+    
+    // Jalankan pengecekan waktu
+    checkTimeLock();
+});
+
+// Cek setiap 1 menit agar jika guru membuka web jam 16:59, saat 17:00 form otomatis muncul
+setInterval(checkTimeLock, 60000);
+
+// ================= FUNGSI LOGIN =================
 async function handleLogin(e) {
     e.preventDefault();
     const btn = document.getElementById('loginBtn'); const err = document.getElementById('loginError'); const card = document.getElementById('loginCard');
@@ -352,6 +399,7 @@ async function handleLogin(e) {
     }
 }
 
+// ================= FUNGSI PENDUKUNG =================
 function toggleTheme() {
     const body = document.body; const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -359,11 +407,6 @@ function toggleTheme() {
     document.getElementById('themeToggle').innerText = newTheme === 'light' ? '☀️' : '🌙';
     if(typeof initCanvas === 'function') initCanvas(); 
 }
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('tpa_theme') || 'dark';
-    document.body.setAttribute('data-theme', savedTheme);
-    document.getElementById('themeToggle').innerText = savedTheme === 'light' ? '☀️' : '🌙';
-});
 function toggleMenu() { document.getElementById('myMenu').classList.toggle('show'); }
 window.onclick = function(event) {
     if (!event.target.matches('.hamburger')) {
@@ -378,6 +421,7 @@ function ucapkanSalam(nama) {
     }
 }
 
+// ================= MUSIK & CANVAS =================
 let player, isMusicPlaying = false;
 window.onYouTubeIframeAPIReady = function() {
     if (typeof YT !== 'undefined' && YT.Player) {
@@ -648,13 +692,16 @@ async function renderSantri() {
         const dbRecord = todayAtt[s.id];
         let currentStatus = dbRecord ? dbRecord.status : (santriDraft[s.id] ? santriDraft[s.id].status : '');
         let currentNote = dbRecord ? dbRecord.note : (santriDraft[s.id] ? santriDraft[s.id].note : null);
-        const isLocked = dbRecord && !isAdmin; const disabledStr = isLocked ? 'disabled' : '';
+        const isLocked = dbRecord && !isAdmin; 
+        const disabledStr = isLocked ? 'disabled' : '';
         html += `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(s.name)}</span><span class="teacher-class">Kelas ${c} ${isLocked ? '🔒' : ''}</span>${currentNote ? `<span style="font-size:11px; color:var(--neon-purple); font-style:italic;">Ket: ${esc(currentNote)}</span>` : ''}</div><div class="att-buttons"><button class="att-btn tepat ${currentStatus==='hadir'?'active':''}" onclick="setSantriDraft('${s.id}','hadir')" ${disabledStr}>Hadir</button><button class="att-btn sakit ${currentStatus==='sakit'?'active':''}" onclick="setSantriDraft('${s.id}','sakit')" ${disabledStr}>Sakit</button><button class="att-btn ijin ${currentStatus==='ijin'?'active':''}" onclick="promptSantriIjin('${s.id}')" ${disabledStr}>Ijin</button><button class="att-btn tidak ${currentStatus==='absen'?'active':''}" onclick="setSantriDraft('${s.id}','absen')" ${disabledStr}>Absen</button>${isAdmin ? `<button class="icon-btn del" onclick="deleteSantri('${s.id}','${esc(s.name)}')">🗑️</button>` : ''}</div></div>`;
       }); html += `</div>`;
     });
     container.innerHTML = html || '<div class="empty" style="text-align:center; padding:20px;">Belum ada data santri.</div>';
+    
     if (Object.keys(santriDraft).length > 0) document.getElementById('santriActionBar').classList.remove('hidden');
     else document.getElementById('santriActionBar').classList.add('hidden');
+    
   } catch (e) { toast(e.message, true); }
 }
 function setSantriDraft(santriId, status, note = null) { playSound('success'); santriDraft[santriId] = { status, note: note !== null ? note : (santriDraft[santriId]?.note || null) }; renderSantri(); }
