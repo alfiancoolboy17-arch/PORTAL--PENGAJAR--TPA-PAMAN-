@@ -21,6 +21,9 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 20%, 40%, 60%, 80% { transform: translateX(10px); } }
 .shake { animation: shake 0.5s ease-in-out; }
 
+/* Animasi Pop-up */
+@keyframes popIn { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+
 #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{border-radius:20px;padding:40px 32px;width:100%;max-width:400px;text-align:center;}
 .logo-wrap{display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;background:var(--bg);border-radius:50%;margin-bottom:15px;border:2px solid var(--neon-green);box-shadow:0 0 15px var(--neon-green)}
@@ -138,7 +141,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
     <h1>PORTAL PRESENSI</h1>
     <h2>TPA PAMAN</h2>
     
-    <!-- Form Login Normal -->
     <form id="loginForm" onsubmit="handleLogin(event)" style="margin-top: 20px;">
       <div class="input-group">
         <label>Username</label>
@@ -152,6 +154,16 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       <div class="error-msg" id="loginError"></div>
     </form>
   </div>
+</div>
+
+<!-- MODAL POP-UP AKSES DITUTUP -->
+<div id="accessDeniedModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
+    <div class="card" style="text-align: center; padding: 40px 30px; max-width: 350px; width: 90%; border-color: var(--neon-red); animation: popIn 0.3s ease-out;">
+        <h1 style="color: var(--neon-red); font-size: 26px; margin-bottom: 20px; font-weight: 800; text-shadow: 0 0 10px rgba(255,0,85,0.5);">❌ AKSES DITUTUP</h1>
+        <p style="color: var(--text); font-size: 16px; margin-bottom: 10px;">Jam Presensi:</p>
+        <h2 style="color: var(--neon-cyan); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(66,232,255,0.5); letter-spacing: 2px;">17:00 - 18:20 WIB</h2>
+        <button class="btn btn-primary" onclick="document.getElementById('accessDeniedModal').classList.add('hidden')" style="margin-top: 25px;">Tutup</button>
+    </div>
 </div>
 
 <div id="appView" class="hidden">
@@ -342,7 +354,15 @@ async function handleLogin(e) {
         });
         const data = await res.json();
         
-        // Jika server menolak (misal karena di luar jam untuk member)
+        // Jika server mengembalikan status 403 (Akses ditutup)
+        if (res.status === 403) {
+            playSound('error');
+            document.getElementById('accessDeniedModal').classList.remove('hidden');
+            btn.disabled = false; btn.textContent = 'Login System';
+            return;
+        }
+
+        // Jika password salah atau error lain
         if (!res.ok) throw new Error(data.error || 'Login gagal');
         
         localStorage.setItem('token', data.token);
@@ -351,7 +371,6 @@ async function handleLogin(e) {
         showApp();
     } catch (error) {
         playSound('error'); 
-        // Tampilkan pesan error dari server (termasuk "Login ditutup...")
         err.textContent = error.message;
         card.classList.add('shake'); setTimeout(() => card.classList.remove('shake'), 500);
         btn.disabled = false; btn.textContent = 'Login System';
