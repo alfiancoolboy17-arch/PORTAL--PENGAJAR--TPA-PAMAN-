@@ -55,7 +55,7 @@ const auth = (req, res, next) => {
   next();
 };
 const adminOnly = (req, res, next) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin yang bisa mengakses' });
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Akses ditutup dulu ya 🙏☺️' });
   next();
 };
 
