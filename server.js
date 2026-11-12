@@ -28,8 +28,6 @@ function loadData() {
   }
 
   if (!data) data = {};
-
-  // Pastikan semua array ada (Mencegah error 'push of undefined')
   if (!data.users) data.users = [];
   if (!data.teachers) data.teachers = [];
   if (!data.santri) data.santri = [];
@@ -37,8 +35,7 @@ function loadData() {
   if (!data.santri_attendance) data.santri_attendance = [];
   if (!data.proker) data.proker = [];
 
-  // Cek apakah ada user dengan role admin. 
-  // Jika tidak ada admin sama sekali di database, baru buatkan default.
+  // Pastikan selalu ada admin jika tidak ada admin sama sekali
   let hasAdmin = data.users.some(u => u.role === 'admin');
   if (!hasAdmin) {
     data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
@@ -62,14 +59,29 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// ================= AUTH =================
+// ================= AUTH & KUNCI WAKTU =================
 app.post('/api/login', (req, res) => {
   try {
     const { username, password } = req.body;
     const data = loadData();
     const user = data.users.find(u => u.username === username && u.password === password);
-    if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
     
+    if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
+
+    // --- PENGECEKAN JAM UNTUK MEMBER (BUKAN ADMIN) ---
+    if (user.role !== 'admin') {
+      const wib = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+      const h = wib.getHours();
+      const m = wib.getMinutes();
+      const currentTotalMinutes = (h * 60) + m;
+      
+      // Jam 17:00 = 1020 menit, Jam 18:20 = 1100 menit
+      if (currentTotalMinutes < (17 * 60) || currentTotalMinutes > (18 * 60 + 20)) {
+        return res.status(403).json({ error: 'Login ditutup. Hanya Admin yang bisa login di luar jam 17:00 - 18:20 WIB.' });
+      }
+    }
+    // ------------------------------------------------
+
     const token = crypto.randomBytes(24).toString('hex');
     let teacherClass = null;
     if (user.teacherId) {
