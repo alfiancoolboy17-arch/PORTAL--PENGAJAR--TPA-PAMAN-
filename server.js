@@ -5,7 +5,12 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+
+// Cek jika Railway Volume (/data) terpasang, gunakan itu agar permanen
+let DATA_FILE = path.join(__dirname, 'data.json');
+if (fs.existsSync('/data')) {
+  DATA_FILE = '/data/data.json';
+}
 
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -32,12 +37,11 @@ function loadData() {
   if (!data.santri_attendance) data.santri_attendance = [];
   if (!data.proker) data.proker = [];
 
-  // Paksa selalu ada admin
-  let admin = data.users.find(u => u.username === 'admin');
-  if (!admin) {
+  // Cek apakah ada user dengan role admin. 
+  // Jika tidak ada admin sama sekali di database, baru buatkan default.
+  let hasAdmin = data.users.some(u => u.role === 'admin');
+  if (!hasAdmin) {
     data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
-  } else {
-    admin.password = 'admin123'; // Fitur darurat reset password
   }
 
   try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch(e) {}
@@ -86,12 +90,17 @@ app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
     const data = loadData();
     const user = data.users.find(u => u.id === req.user.id);
     if (!user) return res.status(404).json({ error: 'User tidak ditemukan' });
+    
     if (newUsername && newUsername !== user.username) {
       if (data.users.find(u => u.username === newUsername)) return res.status(400).json({ error: 'Username sudah dipakai' });
-      user.username = newUsername; req.user.username = newUsername;
+      user.username = newUsername; 
+      req.user.username = newUsername;
     }
+    
     if (newPassword) user.password = newPassword;
-    saveData(data); res.json({ ok: true });
+    
+    saveData(data); 
+    res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Gagal ganti kredensial' }); }
 });
 
