@@ -21,7 +21,6 @@ body{background:var(--bg);color:var(--text);min-height:100vh;transition: backgro
 @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); } 20%, 40%, 60%, 80% { transform: translateX(10px); } }
 .shake { animation: shake 0.5s ease-in-out; }
 
-/* Animasi Pop-up */
 @keyframes popIn { 0% { opacity: 0; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
 #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -102,6 +101,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 .badge.sakit{color:var(--neon-cyan);border:1px solid var(--neon-cyan)}
 .badge.tidak,.badge.belum{color:var(--neon-red);border:1px solid var(--neon-red)}
 .badge.terlaksana{color:var(--neon-green);border:1px solid var(--neon-green)}
+.badge.lulus{color:var(--neon-green);border:1px solid var(--neon-green); background: rgba(0,255,136,0.1);}
 
 .search-box { width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--neon-cyan); border-radius: 8px; color: var(--text); font-size: 13px; margin-bottom: 15px; outline: none; }
 .search-box:focus { box-shadow: 0 0 10px rgba(0,243,255,0.2); }
@@ -156,16 +156,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   </div>
 </div>
 
-<!-- MODAL POP-UP AKSES DITUTUP -->
-<div id="accessDeniedModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(5px);">
-    <div class="card" style="text-align: center; padding: 40px 30px; max-width: 350px; width: 90%; border-color: var(--neon-red); animation: popIn 0.3s ease-out;">
-        <h1 style="color: var(--neon-red); font-size: 26px; margin-bottom: 20px; font-weight: 800; text-shadow: 0 0 10px rgba(255,0,85,0.5);">❌ AKSES DITUTUP</h1>
-        <p style="color: var(--text); font-size: 16px; margin-bottom: 10px;">Jam Presensi:</p>
-        <h2 style="color: var(--neon-cyan); font-size: 24px; font-weight: bold; text-shadow: 0 0 10px rgba(66,232,255,0.5); letter-spacing: 2px;">17:00 - 18:30 WIB</h2>
-        <button class="btn btn-primary" onclick="document.getElementById('accessDeniedModal').classList.add('hidden')" style="margin-top: 25px;">Tutup</button>
-    </div>
-</div>
-
 <div id="appView" class="hidden">
   <header class="app-header">
     <div class="header-left">
@@ -183,6 +173,7 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         <button data-tab="rekap" onclick="switchTab('rekap')">Rekap Guru</button>
         <button data-tab="santri" id="tabSantri" onclick="switchTab('santri')">Presensi Santri</button>
         <button data-tab="rekapSantri" id="tabRekapSantri" onclick="switchTab('rekapSantri')">Rekap Santri</button>
+        <button data-tab="ujian" id="tabUjian" onclick="switchTab('ujian')">Ujian Hafalan</button>
         <button data-tab="guru" id="tabGuru" class="hidden" onclick="switchTab('guru')">Data Guru</button>
         <button data-tab="member" id="tabMember" class="hidden" onclick="switchTab('member')">Data Akun</button>
         <button data-tab="proker" onclick="switchTab('proker')">Program Kerja</button>
@@ -210,6 +201,17 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
       <div class="card">
         <h2>📋 Presensi Guru</h2>
+        
+        <!-- BANNER JAM PRESENSI BARU -->
+        <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed var(--neon-orange); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--neon-orange); font-size: 13px; font-weight: bold; text-align: center; line-height: 1.5;">
+            ⏰ Jam Presensi: Dibuka pukul <span style="color: var(--neon-green);">17:00 WIB</span><br>
+            ⚠️ Batas Tepat Waktu: Pukul <span style="color: var(--neon-red);">18:00 WIB</span>
+            <div style="margin-top: 8px; font-size: 11px; color: var(--muted); font-weight: normal;">
+                (Jam Server saat ini: <span id="liveWibClock" style="color: var(--neon-cyan); font-weight: bold;">Memuat...</span>)
+            </div>
+        </div>
+        <!-- AKHIR BANNER -->
+
         <div id="todayDate" style="font-size: 13px; color: var(--neon-cyan); margin-bottom: 15px; font-weight:bold;"></div>
         <div id="todayAttendance"></div>
       </div>
@@ -263,6 +265,43 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
           <table id="rekapSantriTable">
             <thead><tr><th>Nama Santri</th><th>Kelas</th><th>Hadir</th><th>Sakit</th><th>Ijin</th><th>Absen</th><th>Total</th></tr></thead>
             <tbody id="rekapSantriBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FITUR UJIAN HAFALAN -->
+    <section id="ujianView" class="hidden">
+      <div class="card">
+        <h2>📖 Input Ujian Hafalan</h2>
+        <div class="form-row">
+          <select id="ujianSantri">
+            <option value="">-- Pilih Santri --</option>
+          </select>
+          <input type="text" id="ujianSurah" placeholder="Surat (Cth: An-Naba)">
+          <input type="text" id="ujianJuz" placeholder="Juz (Cth: 30)">
+          <select id="ujianStatus">
+            <option value="lulus">Lulus</option>
+            <option value="belum">Belum Lulus</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <button class="btn-sm" onclick="addUjian()" style="background:var(--neon-green);color:#000;border:none; flex:1;">Simpan Data Hafalan</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Daftar Ujian Hafalan</h2>
+        <div class="form-row">
+          <button class="btn-sm" onclick="downloadPDFUjian()" style="background:var(--neon-cyan); color:#000; border:none;">⬇️ Download PDF</button>
+        </div>
+        <input type="text" id="searchUjian" class="search-box" placeholder="🔍 Cari nama atau surat..." onkeyup="filterTable('searchUjian', 'ujianTable')">
+        <div id="ujianTableContainer" style="overflow-x: auto; background: var(--card-bg); padding: 15px; border-radius: 8px;">
+          <table id="ujianTable">
+            <thead>
+              <tr><th>No</th><th>Nama Santri</th><th>Kelas</th><th>Surat</th><th>Juz</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody id="ujianBody"></tbody>
           </table>
         </div>
       </div>
@@ -341,6 +380,24 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+// ================= FUNGSI JAM WIB REAL-TIME =================
+function startWibClock() {
+    setInterval(() => {
+        const clockEl = document.getElementById('liveWibClock');
+        if (clockEl) {
+            const now = new Date();
+            const wib = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+            const h = String(wib.getHours()).padStart(2, '0');
+            const m = String(wib.getMinutes()).padStart(2, '0');
+            const s = String(wib.getSeconds()).padStart(2, '0');
+            clockEl.textContent = `${h}:${m}:${s}`;
+        }
+    }, 1000);
+}
+document.addEventListener('DOMContentLoaded', () => {
+    startWibClock();
+});
+
 // ================= FUNGSI LOGIN =================
 async function handleLogin(e) {
     e.preventDefault();
@@ -354,15 +411,6 @@ async function handleLogin(e) {
         });
         const data = await res.json();
         
-        // Jika server mengembalikan status 403 (Akses ditutup)
-        if (res.status === 403) {
-            playSound('error');
-            document.getElementById('accessDeniedModal').classList.remove('hidden');
-            btn.disabled = false; btn.textContent = 'Login System';
-            return;
-        }
-
-        // Jika password salah atau error lain
         if (!res.ok) throw new Error(data.error || 'Login gagal');
         
         localStorage.setItem('token', data.token);
@@ -570,15 +618,22 @@ function showApp() {
 }
 function doLogout() { API.call('POST', '/logout').catch(()=>{}); API.logout(); }
 function switchTab(name) {
-  ['dashboard','rekap','santri','rekapSantri','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
+  ['dashboard','rekap','santri','rekapSantri','ujian','guru','member','proker','setting'].forEach(t => document.getElementById(t + 'View').classList.toggle('hidden', t !== name));
   document.getElementById('santriActionBar').classList.add('hidden'); 
   document.querySelectorAll('.menu-dropdown button').forEach(b => b.classList.remove('active'));
   const activeBtn = document.querySelector(`.menu-dropdown button[data-tab="${name}"]`);
   if(activeBtn) activeBtn.classList.add('active');
   document.getElementById('myMenu').classList.remove('show');
-  if (name === 'dashboard') renderDashboard(); if (name === 'rekap') renderRekap(); if (name === 'santri') renderSantri();
-  if (name === 'rekapSantri') renderRekapSantri(); if (name === 'guru') renderGuru(); if (name === 'member') renderMember();
-  if (name === 'proker') renderProker(); if (name === 'setting') renderSetting();
+  
+  if (name === 'dashboard') renderDashboard(); 
+  if (name === 'rekap') renderRekap(); 
+  if (name === 'santri') renderSantri();
+  if (name === 'rekapSantri') renderRekapSantri(); 
+  if (name === 'ujian') renderUjian();
+  if (name === 'guru') renderGuru(); 
+  if (name === 'member') renderMember();
+  if (name === 'proker') renderProker(); 
+  if (name === 'setting') renderSetting();
 }
 
 async function renderDashboard() {
@@ -611,6 +666,7 @@ async function renderDashboard() {
     let displayTeachers = (API.user.role === 'member') ? teachers.filter(t => t.id === API.user.teacherId) : teachers;
     const now = new Date(); const wibTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     const isPast1700 = wibTime.getHours() >= 17; const isToday = (viewDate === todayStr());
+    
     ['A','B','C'].forEach(c => {
       const list = displayTeachers.filter(t => t.class === c); if (!list.length) return;
       html += `<div class="class-section"><div class="class-header" style="color:var(--neon-cyan); font-weight:bold; margin:10px 0;">Kelas ${c}</div>`;
@@ -622,7 +678,7 @@ async function renderDashboard() {
         } else if (cur !== '') { buttonsHtml = `<span style="font-size:12px; color:var(--neon-green); font-weight:bold;">✓ Sudah Absen (${cur.toUpperCase()})</span>`;
         } else if (!isToday) { buttonsHtml = `<span style="font-size:12px; color:#888;">Hanya bisa absen hari ini</span>`;
         } else if (!isPast1700) { buttonsHtml = `<span style="font-size:12px; color:var(--neon-orange);">Dibuka jam 17:00 WIB</span>`;
-        } else { buttonsHtml = `<button class="att-btn tepat" onclick="memberPresensi('${t.id}','tepat', '${viewDate}')">Hadir</button><button class="att-btn telat" onclick="memberPresensi('${t.id}','telat', '${viewDate}')">Telat</button><button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak" onclick="memberPresensi('${t.id}','tidak', '${viewDate}')">Absen</button>`; }
+        } else { buttonsHtml = `<button class="att-btn tepat" onclick="memberPresensi('${t.id}','tepat', '${viewDate}')">Hadir (Sblm 18:00)</button><button class="att-btn telat" onclick="memberPresensi('${t.id}','telat', '${viewDate}')">Telat</button><button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak" onclick="memberPresensi('${t.id}','tidak', '${viewDate}')">Absen</button>`; }
         const imgBtn = (record && record.image) ? `<br><a href="${record.image}" target="_blank" style="font-size:11px;color:var(--neon-cyan);font-weight:bold;">Lihat Bukti Foto</a>` : '';
         html += `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c} ${API.user.role === 'admin' ? '✏️(Admin)' : ''}</span></div><div class="att-buttons">${buttonsHtml}</div><div class="upload-area hidden" id="upload-${t.id}"><label style="font-size:12px;color:var(--neon-purple);font-weight:bold;">Upload Bukti:</label><input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}', '${viewDate}')" style="font-size:11px;color:var(--text);width:100%;margin-top:5px;"></div>${imgBtn}</div>`;
       }); html += `</div>`;
@@ -652,7 +708,7 @@ function handleImageUpload(event, teacherId, date) {
 async function markAttendance(teacherId, status, image, date) {
   try { 
       const res = await API.call('POST', '/attendance', { teacherId, date, status, image }); 
-      if(res.status && res.status !== status) { playSound('error'); toast('Waktu melebihi 18:00, tercatat Telat', true); }
+      if(res.status && res.status !== status) { playSound('error'); toast('Waktu melebihi 18:00, otomatis tercatat Telat', true); }
       else if (API.user.role === 'member') { renderWelcome(true); playSound('success'); toast('Presensi Berhasil! ☺️🙏', false); }
       else { playSound('success'); toast('Data presensi diperbarui ✓'); }
       renderDashboard(); 
@@ -744,6 +800,92 @@ function downloadPDF() {
   html2pdf().set(opt).from(element).save().then(() => { element.style.background = originalBg; element.style.color = originalColor; ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; }); playSound('success'); toast('PDF berhasil diunduh'); });
 }
 
+// ================= FITUR UJIAN HAFALAN =================
+async function renderUjian() {
+  try {
+    const santri = await API.call('GET', '/santri');
+    const select = document.getElementById('ujianSantri');
+    select.innerHTML = '<option value="">-- Pilih Santri --</option>' + 
+      santri.map(s => `<option value="${s.id}">${esc(s.name)} (Kelas ${s.class})</option>`).join('');
+
+    const exams = await API.call('GET', '/exams');
+    const tbody = document.getElementById('ujianBody');
+    
+    tbody.innerHTML = exams.map((e, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${esc(e.santriName)}<br><span style="font-size:10px;color:var(--muted);">Kelas ${e.santriClass}</span></td>
+        <td>${esc(e.surah)}</td>
+        <td>${esc(e.juz)}</td>
+        <td><span class="badge ${e.status === 'lulus' ? 'lulus' : 'belum'}">${e.status === 'lulus' ? 'LULUS' : 'BELUM LULUS'}</span></td>
+        <td><button class="icon-btn del" onclick="deleteUjian('${e.id}')">🗑️</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" class="empty" style="text-align:center;">Belum ada data hafalan.</td></tr>';
+  } catch (e) { toast(e.message, true); }
+}
+
+async function addUjian() {
+  const santriId = document.getElementById('ujianSantri').value;
+  const surah = document.getElementById('ujianSurah').value.trim();
+  const juz = document.getElementById('ujianJuz').value.trim();
+  const status = document.getElementById('ujianStatus').value;
+
+  if (!santriId || !surah || !juz) return toast('Santri, Surat, dan Juz wajib diisi', true);
+
+  try {
+    await API.call('POST', '/exams', { santriId, surah, juz, status });
+    document.getElementById('ujianSurah').value = '';
+    document.getElementById('ujianJuz').value = '';
+    playSound('success');
+    toast('Data ujian hafalan disimpan!');
+    renderUjian();
+  } catch (e) { playSound('error'); toast(e.message, true); }
+}
+
+async function deleteUjian(id) {
+  if (!confirm('Hapus data ujian hafalan ini?')) return;
+  try {
+    await API.call('DELETE', '/exams/' + id);
+    playSound('success');
+    toast('Data berhasil dihapus');
+    renderUjian();
+  } catch (e) { playSound('error'); toast(e.message, true); }
+}
+
+function downloadPDFUjian() {
+  if (typeof html2pdf === 'undefined') return toast('Library PDF belum siap, tunggu sebentar...', true);
+  const element = document.getElementById('ujianTableContainer'); 
+  playSound('success');
+  
+  const opt = { 
+    margin: 10, 
+    filename: `Data_Hafalan_Santri_${todayStr()}.pdf`, 
+    image: { type: 'jpeg', quality: 0.98 }, 
+    html2canvas: { scale: 2 }, 
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+  };
+  
+  const originalBg = element.style.background; const originalColor = element.style.color; 
+  element.style.background = '#ffffff'; element.style.color = '#000000';
+  
+  const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
+  
+  ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); 
+  tds.forEach(td => { td.style.color = '#000'; });
+  
+  const delBtns = element.querySelectorAll('.icon-btn.del');
+  delBtns.forEach(btn => btn.style.display = 'none');
+
+  html2pdf().set(opt).from(element).save().then(() => { 
+    element.style.background = originalBg; element.style.color = originalColor; 
+    ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); 
+    tds.forEach(td => { td.style.color = 'var(--text)'; }); 
+    delBtns.forEach(btn => btn.style.display = 'inline-block');
+    playSound('success'); toast('PDF Hafalan berhasil diunduh'); 
+  });
+}
+
+// ================= GURU & MEMBER & PROKER =================
 async function renderGuru() {
   try {
     const teachers = await API.call('GET', '/teachers'); const list = document.getElementById('guruList');
