@@ -77,8 +77,8 @@ main.content{flex:1;padding:20px 5%;max-width:1000px;margin:0 auto;width:100%}
 .teacher-info{display:flex;flex-direction:column}
 .teacher-name{font-weight:700;font-size:14px;color:var(--text)}
 .teacher-class{font-size:11px;color:var(--neon-cyan);font-weight:bold;}
-.att-buttons{display:flex;gap:6px;flex-wrap:wrap}
-.att-btn{padding:8px 12px;border-radius:6px;border:1px solid;background:transparent;font-size:12px;font-weight:700;cursor:pointer; transition:0.2s;}
+.att-buttons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.att-btn{padding:8px 12px;border-radius:6px;border:1px solid;background:transparent;font-size:12px;font-weight:700;cursor:pointer; transition:0.2s; height:36px;}
 .att-btn.tepat{border-color:var(--neon-green);color:var(--neon-green)}
 .att-btn.tepat.active,.att-btn.tepat:hover{background:var(--neon-green);color:#000;}
 .att-btn.telat{border-color:var(--neon-orange);color:var(--neon-orange)}
@@ -89,6 +89,121 @@ main.content{flex:1;padding:20px 5%;max-width:1000px;margin:0 auto;width:100%}
 .att-btn.sakit.active,.att-btn.sakit:hover{background:var(--neon-cyan);color:#000;}
 .att-btn.tidak{border-color:var(--neon-red);color:var(--neon-red)}
 .att-btn.tidak.active,.att-btn.tidak:hover{background:var(--neon-red);color:#fff;}
+
+/* ================= FINGERPRINT BUTTON ================= */
+.fingerprint-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: transform 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.fingerprint-btn:active { transform: scale(0.94); }
+
+.fp-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    border: 2px solid;
+    transition: all 0.3s ease;
+}
+
+.fp-circle svg {
+    width: 28px;
+    height: 28px;
+    z-index: 2;
+    position: relative;
+    transition: 0.3s;
+}
+
+.fingerprint-btn.tepat .fp-circle {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.3), inset 0 0 10px rgba(0,255,136,0.1);
+    color: var(--neon-green);
+}
+.fingerprint-btn.telat .fp-circle {
+    border-color: var(--neon-orange);
+    box-shadow: 0 0 10px rgba(255,170,0,0.3), inset 0 0 10px rgba(255,170,0,0.1);
+    color: var(--neon-orange);
+}
+.fingerprint-btn.tidak .fp-circle {
+    border-color: var(--neon-red);
+    box-shadow: 0 0 10px rgba(255,0,85,0.3), inset 0 0 10px rgba(255,0,85,0.1);
+    color: var(--neon-red);
+}
+
+/* Active state (sudah absen) */
+.fingerprint-btn.active .fp-circle { animation: fp-glow 2s ease-in-out infinite; }
+.fingerprint-btn.tepat.active .fp-circle { background: var(--neon-green); color: #000; }
+.fingerprint-btn.telat.active .fp-circle { background: var(--neon-orange); color: #000; }
+.fingerprint-btn.tidak.active .fp-circle { background: var(--neon-red); color: #fff; }
+
+@keyframes fp-glow {
+    0%, 100% { box-shadow: 0 0 10px currentColor; }
+    50% { box-shadow: 0 0 22px currentColor, 0 0 38px currentColor; }
+}
+
+/* Efek Scan Line */
+.fp-circle::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, transparent 0%, transparent 42%, currentColor 50%, transparent 58%, transparent 100%);
+    opacity: 0;
+    z-index: 3;
+    transition: opacity 0.2s;
+}
+.fingerprint-btn.scanning .fp-circle::after {
+    opacity: 0.85;
+    animation: fp-scan-move 1.2s ease-in-out;
+}
+.fingerprint-btn.scanning .fp-circle {
+    animation: fp-scan-pulse 1.2s ease-in-out;
+}
+@keyframes fp-scan-move {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+@keyframes fp-scan-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.fingerprint-btn:hover .fp-circle {
+    transform: scale(1.06);
+    filter: brightness(1.15);
+}
+
+.fp-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.fingerprint-btn.tepat .fp-label { color: var(--neon-green); }
+.fingerprint-btn.telat .fp-label { color: var(--neon-orange); }
+.fingerprint-btn.tidak .fp-label { color: var(--neon-red); }
+
+@media (max-width: 500px) {
+    .fp-circle { width: 46px; height: 46px; }
+    .fp-circle svg { width: 24px; height: 24px; }
+    .fp-label { font-size: 8px; }
+    .att-btn { padding: 6px 9px; font-size: 11px; height: 32px;}
+    .att-buttons { gap: 6px; }
+}
 
 .upload-area{margin-top:10px;width:100%;background:var(--bg);padding:10px;border-radius:8px;border:1px dashed var(--line);}
 table{width:100%;border-collapse:collapse;font-size:12px}
@@ -190,7 +305,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterGuruDate" onchange="renderDashboard()">
         
-        <!-- TOMBOL HAPUS RIWAYAT GURU (KHUSUS ADMIN) -->
         <button class="btn-sm" onclick="resetAttendanceGuru('today')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red); margin-left:auto;">Hapus Hari Ini</button>
         <button class="btn-sm" onclick="resetAttendanceGuru('month')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">Hapus Bulan Ini</button>
       </div>
@@ -245,7 +359,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterSantriDate" onchange="renderSantri()">
         
-        <!-- TOMBOL HAPUS RIWAYAT SANTRI (KHUSUS ADMIN) -->
         <button class="btn-sm" onclick="resetAttendanceSantri('today')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red); margin-left:auto;">Hapus Hari Ini</button>
         <button class="btn-sm" onclick="resetAttendanceSantri('month')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">Hapus Bulan Ini</button>
       </div>
@@ -278,7 +391,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       </div>
     </section>
 
-    <!-- FITUR UJIAN HAFALAN -->
     <section id="ujianView" class="hidden">
       <div class="card">
         <h2>📖 Input Ujian Hafalan</h2>
@@ -388,6 +500,9 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
+// Icon Fingerprint SVG
+const FINGERPRINT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>`;
+
 // ================= FUNGSI JAM WIB REAL-TIME =================
 function startWibClock() {
     setInterval(() => {
@@ -402,9 +517,7 @@ function startWibClock() {
         }
     }, 1000);
 }
-document.addEventListener('DOMContentLoaded', () => {
-    startWibClock();
-});
+document.addEventListener('DOMContentLoaded', () => { startWibClock(); });
 
 // ================= FUNGSI LOGIN =================
 async function handleLogin(e) {
@@ -521,6 +634,16 @@ function playSound(type) {
       oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
       gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
       oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'scan') {
+        // Nada pemindaian (naik turun)
+        oscillator.type = 'sine'; 
+        oscillator.frequency.setValueAtTime(600, audioCtx.currentTime); 
+        oscillator.frequency.linearRampToValueAtTime(1100, audioCtx.currentTime + 0.5);
+        oscillator.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 1.0);
+        gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime); 
+        gainNode.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.5);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.1);
+        oscillator.start(); oscillator.stop(audioCtx.currentTime + 1.1);
     }
   } catch (e) {}
 }
@@ -614,7 +737,6 @@ function showApp() {
   renderWelcome(); ucapkanSalam(API.user.name);
   const today = todayStr();
   
-  // Tampilkan statistik untuk semua user
   document.getElementById('statsGrid').classList.remove('hidden'); 
   document.getElementById('chartCard').classList.remove('hidden');
   
@@ -649,6 +771,32 @@ function switchTab(name) {
   if (name === 'setting') renderSetting();
 }
 
+// ================= FINGERPRINT HELPERS =================
+function makeFingerprintBtn(status, label, handler, isActive) {
+    return `<button class="fingerprint-btn ${status} ${isActive?'active':''}" onclick="fpScan(this, () => { ${handler} })">
+        <div class="fp-circle">${FINGERPRINT_SVG}</div>
+        <span class="fp-label">${label}</span>
+    </button>`;
+}
+
+async function fpScan(btn, callback) {
+    if (btn.classList.contains('scanning')) return;
+    
+    btn.classList.add('scanning');
+    playSound('scan');
+    
+    const label = btn.querySelector('.fp-label');
+    const originalText = label.textContent;
+    label.textContent = 'Scan...';
+    
+    await new Promise(r => setTimeout(r, 1200));
+    
+    btn.classList.remove('scanning');
+    label.textContent = originalText;
+    
+    if (typeof callback === 'function') callback();
+}
+
 async function renderDashboard() {
   try {
     const [teachers, attendance] = await Promise.all([API.call('GET', '/teachers'), API.call('GET', '/attendance')]);
@@ -656,7 +804,6 @@ async function renderDashboard() {
     const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
     const todayAtt = {}; attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.teacherId] = a);
     
-    // Statistik untuk semua user (Admin & Member)
     if (teachers.length > 0) {
         const atts = Object.values(todayAtt);
         const sTepat = atts.filter(s => s.status === 'tepat').length; const sTelat = atts.filter(s => s.status === 'telat').length;
@@ -687,12 +834,33 @@ async function renderDashboard() {
       list.forEach(t => {
         const record = todayAtt[t.id] || null; const cur = record ? record.status : '';
         let buttonsHtml = '';
+        
         if (API.user.role === 'admin') {
-            buttonsHtml = `<button class="att-btn tepat ${cur==='tepat'?'active':''}" onclick="markAttendance('${t.id}','tepat', null, '${viewDate}')">Hadir</button><button class="att-btn telat ${cur==='telat'?'active':''}" onclick="markAttendance('${t.id}','telat', null, '${viewDate}')">Telat</button><button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak ${cur==='tidak'?'active':''}" onclick="markAttendance('${t.id}','tidak', null, '${viewDate}')">Absen</button>`;
-        } else if (cur !== '') { buttonsHtml = `<span style="font-size:12px; color:var(--neon-green); font-weight:bold;">✓ Sudah Absen (${cur.toUpperCase()})</span>`;
-        } else if (!isToday) { buttonsHtml = `<span style="font-size:12px; color:#888;">Hanya bisa absen hari ini</span>`;
-        } else if (!isPast1700) { buttonsHtml = `<span style="font-size:12px; color:var(--neon-orange);">Dibuka jam 17:00 WIB</span>`;
-        } else { buttonsHtml = `<button class="att-btn tepat" onclick="memberPresensi('${t.id}','tepat', '${viewDate}')">Hadir (Sblm 18:00)</button><button class="att-btn telat" onclick="memberPresensi('${t.id}','telat', '${viewDate}')">Telat</button><button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button><button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button><button class="att-btn tidak" onclick="memberPresensi('${t.id}','tidak', '${viewDate}')">Absen</button>`; }
+            // Admin: Semua tombol fingerprint + ijin/sakit biasa
+            buttonsHtml = `
+                ${makeFingerprintBtn('tepat', 'Hadir', `markAttendance('${t.id}','tepat', null, '${viewDate}')`, cur==='tepat')}
+                ${makeFingerprintBtn('telat', 'Telat', `markAttendance('${t.id}','telat', null, '${viewDate}')`, cur==='telat')}
+                <button class="att-btn ijin ${cur==='ijin'?'active':''}" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button>
+                <button class="att-btn sakit ${cur==='sakit'?'active':''}" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button>
+                ${makeFingerprintBtn('tidak', 'Absen', `markAttendance('${t.id}','tidak', null, '${viewDate}')`, cur==='tidak')}
+            `;
+        } else if (cur !== '') { 
+            buttonsHtml = `<span style="font-size:12px; color:var(--neon-green); font-weight:bold;">✓ Sudah Absen (${cur.toUpperCase()})</span>`;
+        } else if (!isToday) { 
+            buttonsHtml = `<span style="font-size:12px; color:#888;">Hanya bisa absen hari ini</span>`;
+        } else if (!isPast1700) { 
+            buttonsHtml = `<span style="font-size:12px; color:var(--neon-orange);">Dibuka jam 17:00 WIB</span>`;
+        } else { 
+            // Member: Semua tombol fingerprint + ijin/sakit biasa
+            buttonsHtml = `
+                ${makeFingerprintBtn('tepat', 'Hadir', `memberPresensi('${t.id}','tepat', '${viewDate}')`, false)}
+                ${makeFingerprintBtn('telat', 'Telat', `memberPresensi('${t.id}','telat', '${viewDate}')`, false)}
+                <button class="att-btn ijin" onclick="promptImage('${t.id}','ijin','${viewDate}')">Ijin</button>
+                <button class="att-btn sakit" onclick="promptImage('${t.id}','sakit','${viewDate}')">Sakit</button>
+                ${makeFingerprintBtn('tidak', 'Absen', `memberPresensi('${t.id}','tidak', '${viewDate}')`, false)}
+            `;
+        }
+        
         const imgBtn = (record && record.image) ? `<br><a href="${record.image}" target="_blank" style="font-size:11px;color:var(--neon-cyan);font-weight:bold;">Lihat Bukti Foto</a>` : '';
         html += `<div class="teacher-row"><div class="teacher-info"><span class="teacher-name">${esc(t.name)}</span><span class="teacher-class">Kelas ${c} ${API.user.role === 'admin' ? '✏️(Admin)' : ''}</span></div><div class="att-buttons">${buttonsHtml}</div><div class="upload-area hidden" id="upload-${t.id}"><label style="font-size:12px;color:var(--neon-purple);font-weight:bold;">Upload Bukti:</label><input type="file" accept="image/*" onchange="handleImageUpload(event, '${t.id}', '${viewDate}')" style="font-size:11px;color:var(--text);width:100%;margin-top:5px;"></div>${imgBtn}</div>`;
       }); html += `</div>`;
@@ -701,7 +869,6 @@ async function renderDashboard() {
   } catch (e) { toast(e.message, true); }
 }
 
-// FITUR HAPUS RIWAYAT GURU
 async function resetAttendanceGuru(type) {
     let dateParam = document.getElementById('filterGuruDate').value;
     if (!dateParam) return toast('Pilih tanggal di filter terlebih dahulu', true);
@@ -717,7 +884,6 @@ async function resetAttendanceGuru(type) {
     } catch(e) { playSound('error'); toast(e.message, true); }
 }
 
-// FITUR HAPUS RIWAYAT SANTRI
 async function resetAttendanceSantri(type) {
     let dateParam = document.getElementById('filterSantriDate').value;
     if (!dateParam) return toast('Pilih tanggal di filter terlebih dahulu', true);
@@ -846,7 +1012,7 @@ function downloadPDF() {
   html2pdf().set(opt).from(element).save().then(() => { element.style.background = originalBg; element.style.color = originalColor; ths.forEach(th => { th.style.color = 'var(--neon-cyan)'; th.style.background = 'transparent'; }); tds.forEach(td => { td.style.color = 'var(--text)'; }); playSound('success'); toast('PDF berhasil diunduh'); });
 }
 
-// ================= FITUR UJIAN HAFALAN =================
+// ================= UJIAN HAFALAN =================
 async function renderUjian() {
   try {
     const santri = await API.call('GET', '/santri');
@@ -903,22 +1069,12 @@ function downloadPDFUjian() {
   const element = document.getElementById('ujianTableContainer'); 
   playSound('success');
   
-  const opt = { 
-    margin: 10, 
-    filename: `Data_Hafalan_Santri_${todayStr()}.pdf`, 
-    image: { type: 'jpeg', quality: 0.98 }, 
-    html2canvas: { scale: 2 }, 
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-  };
-  
+  const opt = { margin: 10, filename: `Data_Hafalan_Santri_${todayStr()}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
   const originalBg = element.style.background; const originalColor = element.style.color; 
   element.style.background = '#ffffff'; element.style.color = '#000000';
-  
   const ths = element.querySelectorAll('th'); const tds = element.querySelectorAll('td');
-  
   ths.forEach(th => { th.style.color = '#000'; th.style.background = '#eee'; }); 
   tds.forEach(td => { td.style.color = '#000'; });
-  
   const delBtns = element.querySelectorAll('.icon-btn.del');
   delBtns.forEach(btn => btn.style.display = 'none');
 
