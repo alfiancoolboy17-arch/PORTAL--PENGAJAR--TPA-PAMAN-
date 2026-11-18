@@ -34,9 +34,8 @@ function loadData() {
   if (!data.attendance) data.attendance = [];
   if (!data.santri_attendance) data.santri_attendance = [];
   if (!data.proker) data.proker = [];
-  if (!data.exams) data.exams = []; // TAMBAHAN: Array untuk Ujian Hafalan
+  if (!data.exams) data.exams = [];
 
-  // Pastikan selalu ada admin jika tidak ada admin sama sekali
   let hasAdmin = data.users.some(u => u.role === 'admin');
   if (!hasAdmin) {
     data.users.push({ id: 'u1', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator', teacherId: null });
@@ -69,8 +68,6 @@ app.post('/api/login', (req, res) => {
     
     if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
 
-    // BATAS JAM LOGIN DIHAPUS (Bisa login kapan saja)
-
     const token = crypto.randomBytes(24).toString('hex');
     let teacherClass = null;
     if (user.teacherId) {
@@ -94,8 +91,7 @@ app.put('/api/admin/credentials', auth, adminOnly, (req, res) => {
     
     if (newUsername && newUsername !== user.username) {
       if (data.users.find(u => u.username === newUsername)) return res.status(400).json({ error: 'Username sudah dipakai' });
-      user.username = newUsername; 
-      req.user.username = newUsername;
+      user.username = newUsername; req.user.username = newUsername;
     }
     
     if (newPassword) user.password = newPassword;
@@ -152,10 +148,25 @@ app.delete('/api/users/:id', auth, adminOnly, (req, res) => {
 app.get('/api/attendance', auth, (req, res) => {
   try {
     const data = loadData();
-    if (req.user.role === 'member') return res.json(data.attendance.filter(a => a.teacherId === req.user.teacherId));
+    // PERUBAHAN: Kembalikan semua data agar statistik bisa dilihat semua guru
     res.json(data.attendance);
   } catch (err) { res.status(500).json({ error: 'Gagal load presensi' }); }
 });
+
+// FITUR BARU: Hapus Riwayat Presensi Guru
+app.delete('/api/attendance/reset', auth, adminOnly, (req, res) => {
+  try {
+    const { type, date } = req.body;
+    const data = loadData();
+    if (type === 'today') {
+      data.attendance = data.attendance.filter(a => a.date !== date);
+    } else if (type === 'month') {
+      data.attendance = data.attendance.filter(a => !a.date.startsWith(date));
+    }
+    saveData(data); res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Gagal menghapus riwayat' }); }
+});
+
 app.post('/api/attendance', auth, (req, res) => {
   try {
     const { teacherId, date, status, image } = req.body;
@@ -163,15 +174,10 @@ app.post('/api/attendance', auth, (req, res) => {
     if (req.user.role === 'member' && req.user.teacherId !== teacherId) return res.status(403).json({ error: 'Hanya bisa absen sendiri' });
     
     let finalStatus = status;
-    // LOGIKA BARU: Jika member absen 'tepat', cek apakah sudah lewat jam 18:00 WIB
     if (req.user.role === 'member' && status === 'tepat') {
       const wib = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-      const h = wib.getHours();
-      if (h >= 18) { // Jam 18:00 ke atas jadi Telat
-        finalStatus = 'telat';
-      }
+      if (wib.getHours() >= 18) finalStatus = 'telat';
     }
-    
     const ex = data.attendance.find(a => a.teacherId === teacherId && a.date === date);
     if (ex) { 
       if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin bisa edit' });
@@ -182,6 +188,7 @@ app.post('/api/attendance', auth, (req, res) => {
     saveData(data); res.json({ ok: true, status: finalStatus });
   } catch (err) { res.status(500).json({ error: 'Gagal simpan presensi' }); }
 });
+
 app.get('/api/rekap', auth, (req, res) => {
   try {
     const data = loadData(); const filtered = data.attendance.filter(a => a.date.startsWith(req.query.month || ''));
@@ -228,6 +235,21 @@ app.get('/api/santri_attendance', auth, (req, res) => {
     res.json(data.santri_attendance.filter(a => ids.includes(a.santriId)));
   } catch (err) { res.status(500).json({ error: 'Gagal load presensi santri' }); }
 });
+
+// FITUR BARU: Hapus Riwayat Presensi Santri
+app.delete('/api/santri_attendance/reset', auth, adminOnly, (req, res) => {
+  try {
+    const { type, date } = req.body;
+    const data = loadData();
+    if (type === 'today') {
+      data.santri_attendance = data.santri_attendance.filter(a => a.date !== date);
+    } else if (type === 'month') {
+      data.santri_attendance = data.santri_attendance.filter(a => !a.date.startsWith(date));
+    }
+    saveData(data); res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Gagal menghapus riwayat' }); }
+});
+
 app.post('/api/santri_attendance/bulk', auth, (req, res) => {
   try {
     const { date, records } = req.body; const data = loadData();
@@ -257,13 +279,11 @@ app.get('/api/rekap_santri', auth, (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Gagal load rekap santri' }); }
 });
 
-// ================= UJIAN HAFALAN (BARU) =================
+// ================= UJIAN HAFALAN =================
 app.get('/api/exams', auth, (req, res) => {
   try {
     const data = loadData();
     if (req.user.role === 'admin') return res.json(data.exams);
-    
-    // Guru hanya bisa lihat ujian kelasnya sendiri
     const t = data.teachers.find(x => x.id === req.user.teacherId);
     if (!t) return res.json([]);
     const santriIds = data.santri.filter(s => s.class === t.class).map(s => s.id);
@@ -275,31 +295,20 @@ app.post('/api/exams', auth, (req, res) => {
   try {
     const { santriId, surah, juz, status } = req.body;
     const data = loadData();
-    
     const santri = data.santri.find(s => s.id === santriId);
     if (!santri) return res.status(404).json({ error: 'Santri tidak ditemukan' });
 
-    // Validasi: Jika member, pastikan santri ini ada di kelasnya
     if (req.user.role === 'member') {
       const t = data.teachers.find(x => x.id === req.user.teacherId);
       if (!t || santri.class !== t.class) return res.status(403).json({ error: 'Anda hanya bisa menginput untuk kelas Anda sendiri' });
     }
 
     const newExam = {
-      id: 'e' + Date.now(),
-      santriId,
-      santriName: santri.name,
-      santriClass: santri.class,
-      surah,
-      juz,
-      status, // 'lulus' atau 'belum'
-      creator: req.user.name,
+      id: 'e' + Date.now(), santriId, santriName: santri.name, santriClass: santri.class,
+      surah, juz, status, creator: req.user.name,
       date: new Date().toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' })
     };
-
-    data.exams.unshift(newExam);
-    saveData(data);
-    res.json(newExam);
+    data.exams.unshift(newExam); saveData(data); res.json(newExam);
   } catch (err) { res.status(500).json({ error: 'Gagal simpan data ujian' }); }
 });
 
@@ -308,15 +317,11 @@ app.delete('/api/exams/:id', auth, (req, res) => {
     const data = loadData();
     const exam = data.exams.find(e => e.id === req.params.id);
     if (!exam) return res.status(404).json({ error: 'Data tidak ditemukan' });
-
     if (req.user.role === 'member') {
       const t = data.teachers.find(x => x.id === req.user.teacherId);
       if (!t || exam.santriClass !== t.class) return res.status(403).json({ error: 'Akses ditolak' });
     }
-
-    data.exams = data.exams.filter(e => e.id !== req.params.id); 
-    saveData(data); 
-    res.json({ ok: true });
+    data.exams = data.exams.filter(e => e.id !== req.params.id); saveData(data); res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Gagal hapus data ujian' }); }
 });
 
