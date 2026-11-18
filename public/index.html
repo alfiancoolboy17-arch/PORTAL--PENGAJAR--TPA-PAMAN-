@@ -185,12 +185,18 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
   <main class="content" style="padding-bottom: 100px;">
     <section id="dashboardView">
       <div class="welcome-card" id="welcomeMsg"></div>
+      
       <div class="date-filter hidden" id="guruDateFilter">
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterGuruDate" onchange="renderDashboard()">
-        <span style="font-size:11px; color:var(--muted);">(Admin dapat mengedit riwayat)</span>
+        
+        <!-- TOMBOL HAPUS RIWAYAT GURU (KHUSUS ADMIN) -->
+        <button class="btn-sm" onclick="resetAttendanceGuru('today')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red); margin-left:auto;">Hapus Hari Ini</button>
+        <button class="btn-sm" onclick="resetAttendanceGuru('month')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">Hapus Bulan Ini</button>
       </div>
+      
       <div class="card hidden" id="chartCard"><h2>📈 Statistik Kehadiran</h2><div class="chart-container" style="height: 220px; display:flex; justify-content:center;"><canvas id="dashboardChart"></canvas></div></div>
+      
       <div class="stats-grid" id="statsGrid">
         <div class="stat-box"><div class="num" id="statTotalGuru">0</div><div class="label">Total Guru</div></div>
         <div class="stat-box tepat"><div class="num" id="statTepat">0</div><div class="label">Tepat</div></div>
@@ -199,10 +205,10 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
         <div class="stat-box sakit"><div class="num" id="statSakit">0</div><div class="label">Sakit</div></div>
         <div class="stat-box tidak"><div class="num" id="statTidak">0</div><div class="label">Absen</div></div>
       </div>
+      
       <div class="card">
         <h2>📋 Presensi Guru</h2>
         
-        <!-- BANNER JAM PRESENSI BARU -->
         <div style="background: rgba(255, 170, 0, 0.1); border: 1px dashed var(--neon-orange); padding: 12px; border-radius: 8px; margin-bottom: 15px; color: var(--neon-orange); font-size: 13px; font-weight: bold; text-align: center; line-height: 1.5;">
             ⏰ Jam Presensi: Dibuka pukul <span style="color: var(--neon-green);">17:00 WIB</span><br>
             ⚠️ Batas Tepat Waktu: Pukul <span style="color: var(--neon-red);">18:00 WIB</span>
@@ -210,7 +216,6 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
                 (Jam Server saat ini: <span id="liveWibClock" style="color: var(--neon-cyan); font-weight: bold;">Memuat...</span>)
             </div>
         </div>
-        <!-- AKHIR BANNER -->
 
         <div id="todayDate" style="font-size: 13px; color: var(--neon-cyan); margin-bottom: 15px; font-weight:bold;"></div>
         <div id="todayAttendance"></div>
@@ -239,7 +244,10 @@ table td{padding:10px 6px;border-bottom:1px solid var(--line);color:var(--text)}
       <div class="date-filter hidden" id="santriDateFilter">
         <label style="font-size:12px; font-weight:bold; color:var(--neon-cyan);">Pilih Tanggal Riwayat:</label>
         <input type="date" id="filterSantriDate" onchange="renderSantri()">
-        <span style="font-size:11px; color:var(--muted);">(Admin dapat mengedit riwayat)</span>
+        
+        <!-- TOMBOL HAPUS RIWAYAT SANTRI (KHUSUS ADMIN) -->
+        <button class="btn-sm" onclick="resetAttendanceSantri('today')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red); margin-left:auto;">Hapus Hari Ini</button>
+        <button class="btn-sm" onclick="resetAttendanceSantri('month')" style="background:rgba(255,0,85,0.2); color:var(--neon-red); border:1px solid var(--neon-red);">Hapus Bulan Ini</button>
       </div>
       <div class="card hidden" id="santriAdminForm">
         <h2>➕ Tambah Santri (Admin)</h2>
@@ -605,14 +613,19 @@ function showApp() {
   document.getElementById('userRole').textContent = API.user.role === 'admin' ? 'Admin' : 'Member';
   renderWelcome(); ucapkanSalam(API.user.name);
   const today = todayStr();
+  
+  // Tampilkan statistik untuk semua user
+  document.getElementById('statsGrid').classList.remove('hidden'); 
+  document.getElementById('chartCard').classList.remove('hidden');
+  
   if(API.user.role === 'admin') {
     document.getElementById('guruDateFilter').classList.remove('hidden'); document.getElementById('filterGuruDate').value = today;
     document.getElementById('santriDateFilter').classList.remove('hidden'); document.getElementById('filterSantriDate').value = today;
     document.getElementById('tabGuru').classList.remove('hidden'); document.getElementById('tabMember').classList.remove('hidden'); document.getElementById('tabSetting').classList.remove('hidden');
-    document.getElementById('statsGrid').classList.remove('hidden'); document.getElementById('chartCard').classList.remove('hidden'); document.getElementById('santriAdminForm').classList.remove('hidden');
+    document.getElementById('santriAdminForm').classList.remove('hidden');
   } else {
     document.getElementById('tabGuru').classList.add('hidden'); document.getElementById('tabMember').classList.add('hidden'); document.getElementById('tabSetting').classList.add('hidden');
-    document.getElementById('statsGrid').classList.add('hidden'); document.getElementById('chartCard').classList.add('hidden'); document.getElementById('santriAdminForm').classList.add('hidden');
+    document.getElementById('santriAdminForm').classList.add('hidden');
   }
   switchTab('dashboard');
 }
@@ -643,7 +656,8 @@ async function renderDashboard() {
     const viewDate = (filterDateInput && !filterDateInput.classList.contains('hidden')) ? filterDateInput.value : todayStr();
     const todayAtt = {}; attendance.filter(a => a.date === viewDate).forEach(a => todayAtt[a.teacherId] = a);
     
-    if (API.user.role === 'admin') {
+    // Statistik untuk semua user (Admin & Member)
+    if (teachers.length > 0) {
         const atts = Object.values(todayAtt);
         const sTepat = atts.filter(s => s.status === 'tepat').length; const sTelat = atts.filter(s => s.status === 'telat').length;
         const sIjin = atts.filter(s => s.status === 'ijin').length; const sSakit = atts.filter(s => s.status === 'sakit').length; const sTidak = atts.filter(s => s.status === 'tidak').length;
@@ -685,6 +699,38 @@ async function renderDashboard() {
     });
     container.innerHTML = html || '<div class="empty" style="text-align:center; padding:20px;">Belum ada data.</div>';
   } catch (e) { toast(e.message, true); }
+}
+
+// FITUR HAPUS RIWAYAT GURU
+async function resetAttendanceGuru(type) {
+    let dateParam = document.getElementById('filterGuruDate').value;
+    if (!dateParam) return toast('Pilih tanggal di filter terlebih dahulu', true);
+    if (type === 'month') dateParam = dateParam.substring(0, 7); 
+    
+    const msg = type === 'today' ? `Hapus SEMUA presensi guru tanggal ${dateParam}?` : `Hapus SEMUA presensi guru bulan ${dateParam}?`;
+    if (!confirm(msg + " Tindakan ini tidak bisa dibatalkan!")) return;
+    
+    try {
+        await API.call('DELETE', '/attendance/reset', { type, date: dateParam });
+        playSound('success'); toast('Riwayat presensi guru berhasil dihapus');
+        renderDashboard();
+    } catch(e) { playSound('error'); toast(e.message, true); }
+}
+
+// FITUR HAPUS RIWAYAT SANTRI
+async function resetAttendanceSantri(type) {
+    let dateParam = document.getElementById('filterSantriDate').value;
+    if (!dateParam) return toast('Pilih tanggal di filter terlebih dahulu', true);
+    if (type === 'month') dateParam = dateParam.substring(0, 7);
+    
+    const msg = type === 'today' ? `Hapus SEMUA presensi santri tanggal ${dateParam}?` : `Hapus SEMUA presensi santri bulan ${dateParam}?`;
+    if (!confirm(msg + " Tindakan ini tidak bisa dibatalkan!")) return;
+    
+    try {
+        await API.call('DELETE', '/santri_attendance/reset', { type, date: dateParam });
+        playSound('success'); toast('Riwayat presensi santri berhasil dihapus');
+        renderSantri();
+    } catch(e) { playSound('error'); toast(e.message, true); }
 }
 
 function memberPresensi(teacherId, status, date) { toast("Mengecek lokasi Anda...", false); checkLocation(() => { markAttendance(teacherId, status, null, date); }); }
