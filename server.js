@@ -34,6 +34,7 @@ function loadData() {
   if (!data.attendance) data.attendance = [];
   if (!data.santri_attendance) data.santri_attendance = [];
   if (!data.proker) data.proker = [];
+  if (!data.exams) data.exams = []; // TAMBAHAN: Array untuk Ujian Hafalan
 
   // Pastikan selalu ada admin jika tidak ada admin sama sekali
   let hasAdmin = data.users.some(u => u.role === 'admin');
@@ -59,7 +60,7 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-// ================= AUTH & KUNCI WAKTU =================
+// ================= AUTH =================
 app.post('/api/login', (req, res) => {
   try {
     const { username, password } = req.body;
@@ -68,19 +69,7 @@ app.post('/api/login', (req, res) => {
     
     if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
 
-    // --- PENGECEKAN JAM UNTUK MEMBER (BUKAN ADMIN) ---
-    if (user.role !== 'admin') {
-      const wib = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-      const h = wib.getHours();
-      const m = wib.getMinutes();
-      const currentTotalMinutes = (h * 60) + m;
-      
-      // Jam 17:00 = 1020 menit, Jam 18:20 = 1100 menit
-      if (currentTotalMinutes < (17 * 60) || currentTotalMinutes > (18 * 60 + 20)) {
-        return res.status(403).json({ error: 'Login ditutup. Hanya Admin yang bisa login di luar jam 17:00 - 18:20 WIB.' });
-      }
-    }
-    // ------------------------------------------------
+    // BATAS JAM LOGIN DIHAPUS (Bisa login kapan saja)
 
     const token = crypto.randomBytes(24).toString('hex');
     let teacherClass = null;
@@ -174,10 +163,15 @@ app.post('/api/attendance', auth, (req, res) => {
     if (req.user.role === 'member' && req.user.teacherId !== teacherId) return res.status(403).json({ error: 'Hanya bisa absen sendiri' });
     
     let finalStatus = status;
+    // LOGIKA BARU: Jika member absen 'tepat', cek apakah sudah lewat jam 18:00 WIB
     if (req.user.role === 'member' && status === 'tepat') {
       const wib = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-      if (wib.getHours() > 18 || (wib.getHours() === 18 && wib.getMinutes() > 0)) finalStatus = 'telat';
+      const h = wib.getHours();
+      if (h >= 18) { // Jam 18:00 ke atas jadi Telat
+        finalStatus = 'telat';
+      }
     }
+    
     const ex = data.attendance.find(a => a.teacherId === teacherId && a.date === date);
     if (ex) { 
       if (req.user.role !== 'admin') return res.status(403).json({ error: 'Hanya admin bisa edit' });
@@ -261,6 +255,69 @@ app.get('/api/rekap_santri', auth, (req, res) => {
       return { id: s.id, name: s.name, class: s.class, hadir: recs.filter(r => r.status === 'hadir').length, sakit: recs.filter(r => r.status === 'sakit').length, ijin: recs.filter(r => r.status === 'ijin').length, absen: recs.filter(r => r.status === 'absen').length, total: recs.length };
     }));
   } catch (err) { res.status(500).json({ error: 'Gagal load rekap santri' }); }
+});
+
+// ================= UJIAN HAFALAN (BARU) =================
+app.get('/api/exams', auth, (req, res) => {
+  try {
+    const data = loadData();
+    if (req.user.role === 'admin') return res.json(data.exams);
+    
+    // Guru hanya bisa lihat ujian kelasnya sendiri
+    const t = data.teachers.find(x => x.id === req.user.teacherId);
+    if (!t) return res.json([]);
+    const santriIds = data.santri.filter(s => s.class === t.class).map(s => s.id);
+    res.json(data.exams.filter(e => santriIds.includes(e.santriId)));
+  } catch (err) { res.status(500).json({ error: 'Gagal load data ujian' }); }
+});
+
+app.post('/api/exams', auth, (req, res) => {
+  try {
+    const { santriId, surah, juz, status } = req.body;
+    const data = loadData();
+    
+    const santri = data.santri.find(s => s.id === santriId);
+    if (!santri) return res.status(404).json({ error: 'Santri tidak ditemukan' });
+
+    // Validasi: Jika member, pastikan santri ini ada di kelasnya
+    if (req.user.role === 'member') {
+      const t = data.teachers.find(x => x.id === req.user.teacherId);
+      if (!t || santri.class !== t.class) return res.status(403).json({ error: 'Anda hanya bisa menginput untuk kelas Anda sendiri' });
+    }
+
+    const newExam = {
+      id: 'e' + Date.now(),
+      santriId,
+      santriName: santri.name,
+      santriClass: santri.class,
+      surah,
+      juz,
+      status, // 'lulus' atau 'belum'
+      creator: req.user.name,
+      date: new Date().toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta' })
+    };
+
+    data.exams.unshift(newExam);
+    saveData(data);
+    res.json(newExam);
+  } catch (err) { res.status(500).json({ error: 'Gagal simpan data ujian' }); }
+});
+
+app.delete('/api/exams/:id', auth, (req, res) => {
+  try {
+    const data = loadData();
+    const exam = data.exams.find(e => e.id === req.params.id);
+    if (!exam) return res.status(404).json({ error: 'Data tidak ditemukan' });
+
+    if (req.user.role === 'member') {
+      const t = data.teachers.find(x => x.id === req.user.teacherId);
+      if (!t || exam.santriClass !== t.class) return res.status(403).json({ error: 'Akses ditolak' });
+    }
+
+    data.exams = data.exams.filter(e => e.id !== req.params.id); 
+    saveData(data); 
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Gagal hapus data ujian' }); }
 });
 
 // ================= PROKER =================
